@@ -31,28 +31,31 @@ export default {
   async mounted() {
     const query = this.$route.query
     this.busNo = query.busNo
-    this.direction = query.direction
-    this.stationName = query.stationName // ******** stationName 사용
+    this.direction = query.direction // 전달받은 상행/하행 정보
+    this.stationName = query.stationName
 
     try {
       // API 호출
       const busData = await fetchBusRouteDetails(this.busNo)
 
-      const directionCode = this.direction === 'up' ? 2 : 1
+      // direction 정보를 기반으로 상행/하행 코드 설정
+      const directionCode = this.direction === '상행' ? 2 : 1 // ******** 수정 부분
+      console.log(`[INFO] 상행/하행 방향 코드: ${directionCode}`)
+
       const stations = busData.station
         .filter(
           (station) =>
-            station.stationDirection === directionCode &&
-            station.nonstopStation === 0
+            station.stationDirection === directionCode && // 상행/하행 필터링
+            station.nonstopStation === 0 // 미정차 정류장 제외
         )
         .map((station, index) => ({
           ...station,
-          idx: index + 1
+          idx: index + 1 // 순번 추가
         }))
 
       // stationName 기반으로 현재 정류장 찾기
       const currentIndex = stations.findIndex(
-        (station) => station.stationName === this.stationName // ******** stationName 사용
+        (station) => station.stationName === this.stationName
       )
 
       if (currentIndex === -1) {

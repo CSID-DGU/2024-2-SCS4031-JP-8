@@ -1,15 +1,31 @@
 <template>
   <div class="bus-info">
     <h1>{{ busNo }}번 버스 노선 상세 정보</h1>
+
+    <!-- 필터링된 최대 5개의 정류장 표시 -->
     <div
       v-for="station in filteredStations"
       :key="station.stationID"
       class="station"
     >
+      <h3>정류장 기본 정보</h3>
       <p>정류장명: {{ station.stationName }}</p>
       <p>정류장 ID: {{ station.stationID }}</p>
       <p>Local 정류장 ID: {{ station.localStationID }}</p>
       <p>정류장 순번: {{ station.idx }}</p>
+    </div>
+
+    <!-- 포아송 확률 계산 결과 표시 -->
+    <div v-if="selectedStations.length" class="results">
+      <h3>탑승 확률이 높은 정류장</h3>
+      <div
+        v-for="result in selectedStations"
+        :key="result.stationName"
+        class="result"
+      >
+        <p>정류장명: {{ result.stationName }}</p>
+        <p>탑승 확률: {{ result.probability.toFixed(2) }}%</p>
+      </div>
     </div>
   </div>
 </template>
@@ -18,7 +34,7 @@
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
 import { busRouteData } from './busData'
-import { calculateAvailableSeats } from './seatCalculation' // 여석 합산 로직 가져오기
+import { calculateBoardingProbability } from './poisson'
 
 export default {
   data() {
@@ -27,10 +43,12 @@ export default {
       direction: null,
       stationName: null,
       firstStationLocalID: null,
-      filteredStations: [],
+      filteredStations: [], // 최대 5개의 정류장
+      selectedStations: [], // 포아송 계산 결과
       arrivalInfo: null,
-      routeId: null, // routeId를 저장
-      availableSeats: null // 계산된 여석 수
+      routeId: null,
+      filePath: '', // CSV 파일 경로
+      timeSlot: '' // 시간대
     }
   },
   async mounted() {
@@ -78,7 +96,7 @@ export default {
         }))
       console.log('[INFO] 필터링된 정류장 목록:', stations)
 
-      this.filteredStations = stations.slice(0, 5)
+      this.filteredStations = stations.slice(0, 5) // 최대 5개의 정류장 저장
 
       // 4. 첫 번째 정류장의 localStationID 가져오기
       const firstStation = this.filteredStations[0]
@@ -93,20 +111,46 @@ export default {
         console.log('[INFO] 도착 정보 API 호출 시작...')
         const arrivalData = await fetchBusArrivalInfo(
           this.firstStationLocalID,
-          this.busNo // busNo와 routeId를 전달
+          this.busNo
         )
         console.log('[INFO] 도착 정보 API 응답:', arrivalData)
 
         this.arrivalInfo = arrivalData
 
-        // 6. 10분 내 여석 합산 로직 호출
-        this.availableSeats = calculateAvailableSeats(this.arrivalInfo)
-        console.log('[INFO] 최종 계산된 여석 수:', this.availableSeats)
+        // 6. CSV 경로 및 시간대 계산
+        const dayType = this.getDayType()
+        this.filePath = `/csv/${this.busNo}/passengers/${this.busNo}_${dayType}.csv`
+        const now = new Date()
+        this.timeSlot = `${now.getHours()}시`
+
+        // 7. 포아송 확률 계산
+        const startSeq = this.filteredStations[0]?.idx
+        const endSeq =
+          busRouteData[this.busNo]?.[this.direction === '상행' ? 'up' : 'down']
+
+        this.selectedStations = await calculateBoardingProbability({
+          arrivalInfo: this.arrivalInfo,
+          routeId: this.routeId,
+          startSeq,
+          endSeq,
+          filePath: this.filePath,
+          timeSlot: this.timeSlot,
+          stations: stations
+        })
+
+        console.log('[INFO] 계산된 탑승 확률 데이터:', this.selectedStations)
       } else {
         console.warn('[WARN] 첫 번째 정류장 정보가 없습니다.')
       }
     } catch (error) {
       console.error('[ERROR] 데이터 처리 실패:', error)
+    }
+  },
+  methods: {
+    getDayType() {
+      const now = new Date()
+      const day = now.getDay()
+      return day === 0 ? 'sunday' : day === 6 ? 'saturday' : 'weekday'
     }
   }
 }
@@ -121,5 +165,11 @@ export default {
   margin-bottom: 10px;
   border-bottom: 1px solid #ccc;
   padding-bottom: 10px;
+}
+.results {
+  margin-top: 20px;
+}
+.result {
+  margin-bottom: 15px;
 }
 </style>

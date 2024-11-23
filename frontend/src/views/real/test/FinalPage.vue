@@ -8,6 +8,7 @@
     >
       <p>정류장명: {{ station.stationName }}</p>
       <p>정류장 ID: {{ station.stationID }}</p>
+      <p>Local 정류장 ID: {{ station.localStationID }}</p>
       <p>정류장 순번: {{ station.idx }}</p>
     </div>
   </div>
@@ -15,31 +16,53 @@
 
 <script>
 import { fetchBusRouteDetails } from './busApi'
-import { sanitizeStationName } from './stringsUtils'
+import { fetchBusArrivalInfo } from './busArrivalAPI'
+import { busRouteData } from './busData'
+import { calculateAvailableSeats } from './seatCalculation' // 여석 합산 로직 가져오기
 
 export default {
   data() {
     return {
       busNo: null,
       direction: null,
-      firstStationName: null, // ******** 첫 번째 정류장 이름
-      firstStationID: null, // ******** 첫 번째 정류장 ID
-      firstStationDirection: null, // ******** 첫 번째 정류장 방향
-      filteredStations: []
+      stationName: null,
+      firstStationLocalID: null,
+      filteredStations: [],
+      arrivalInfo: null,
+      routeId: null, // routeId를 저장
+      availableSeats: null // 계산된 여석 수
     }
   },
   async mounted() {
     const query = this.$route.query
     this.busNo = query.busNo
-    this.direction = query.direction // 전달받은 상행/하행 정보
+    this.direction = query.direction
     this.stationName = query.stationName
 
-    try {
-      // API 호출
-      const busData = await fetchBusRouteDetails(this.busNo)
+    console.log('[INFO] 초기화된 데이터:', {
+      busNo: this.busNo,
+      direction: this.direction,
+      stationName: this.stationName
+    })
 
-      // direction 정보를 기반으로 상행/하행 코드 설정
-      const directionCode = this.direction === '상행' ? 2 : 1 // ******** 수정 부분
+    try {
+      // 1. 노선 상세 데이터 가져오기
+      console.log('[INFO] 버스 노선 상세 API 호출 중...')
+      const busData = await fetchBusRouteDetails(this.busNo)
+      console.log('[INFO] 버스 노선 상세 API 응답:', busData)
+
+      // 2. 노선의 routeId 가져오기
+      this.routeId = busRouteData[this.busNo]?.routeId
+      if (!this.routeId) {
+        console.error(
+          `[ERROR] routeId를 찾을 수 없습니다. 노선 번호: ${this.busNo}`
+        )
+        return
+      }
+      console.log(`[INFO] routeId 확인: ${this.routeId}`)
+
+      // 3. 상행/하행 필터링 및 정류장 데이터 정제
+      const directionCode = this.direction === '상행' ? 2 : 1
       console.log(`[INFO] 상행/하행 방향 코드: ${directionCode}`)
 
       const stations = busData.station
@@ -50,28 +73,40 @@ export default {
         )
         .map((station, index) => ({
           ...station,
-          idx: index + 1 // 순번 추가
+          idx: index + 1,
+          localStationID: station.localStationID
         }))
+      console.log('[INFO] 필터링된 정류장 목록:', stations)
 
-      // stationName 기반으로 현재 정류장 찾기
-      const currentIndex = stations.findIndex(
-        (station) => station.stationName === this.stationName
-      )
+      this.filteredStations = stations.slice(0, 5)
 
-      if (currentIndex === -1) {
-        console.warn(
-          '[WARN] 현재 정류장을 찾을 수 없습니다. 기본값으로 설정합니다.'
+      // 4. 첫 번째 정류장의 localStationID 가져오기
+      const firstStation = this.filteredStations[0]
+      if (firstStation) {
+        this.firstStationLocalID = firstStation.localStationID
+        console.log(
+          '[INFO] 첫 번째 정류장 LocalStationID:',
+          this.firstStationLocalID
         )
+
+        // 5. 도착 정보 API 호출
+        console.log('[INFO] 도착 정보 API 호출 시작...')
+        const arrivalData = await fetchBusArrivalInfo(
+          this.firstStationLocalID,
+          this.busNo // busNo와 routeId를 전달
+        )
+        console.log('[INFO] 도착 정보 API 응답:', arrivalData)
+
+        this.arrivalInfo = arrivalData
+
+        // 6. 10분 내 여석 합산 로직 호출
+        this.availableSeats = calculateAvailableSeats(this.arrivalInfo)
+        console.log('[INFO] 최종 계산된 여석 수:', this.availableSeats)
+      } else {
+        console.warn('[WARN] 첫 번째 정류장 정보가 없습니다.')
       }
-
-      this.filteredStations = stations.slice(
-        Math.max(0, currentIndex - 5),
-        currentIndex + 1
-      )
-
-      console.log('[INFO] 필터링된 정류장 데이터:', this.filteredStations)
     } catch (error) {
-      console.error('[ERROR] 버스 노선 상세 조회 실패:', error)
+      console.error('[ERROR] 데이터 처리 실패:', error)
     }
   }
 }

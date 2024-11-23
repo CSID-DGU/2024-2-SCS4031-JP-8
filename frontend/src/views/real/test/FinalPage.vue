@@ -18,6 +18,7 @@
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
 import { busRouteData } from './busData'
+import { calculateAvailableSeats } from './seatCalculation' // 여석 합산 로직 가져오기
 
 export default {
   data() {
@@ -28,7 +29,8 @@ export default {
       firstStationLocalID: null,
       filteredStations: [],
       arrivalInfo: null,
-      routeId: null // routeId를 저장
+      routeId: null, // routeId를 저장
+      availableSeats: null // 계산된 여석 수
     }
   },
   async mounted() {
@@ -96,6 +98,10 @@ export default {
         console.log('[INFO] 도착 정보 API 응답:', arrivalData)
 
         this.arrivalInfo = arrivalData
+
+        // 6. 10분 내 여석 합산 로직 호출
+        this.availableSeats = calculateAvailableSeats(this.arrivalInfo)
+        console.log('[INFO] 최종 계산된 여석 수:', this.availableSeats)
       } else {
         console.warn('[WARN] 첫 번째 정류장 정보가 없습니다.')
       }

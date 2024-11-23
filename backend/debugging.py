@@ -3,11 +3,15 @@ import math
 from datetime import datetime
 
 # 승차인원 데이터 불러오기
-passenger_data = pd.read_csv('int_passenger_flow.csv', index_col='정류장명')
+passenger_data = pd.read_csv('5000B_pass.csv', index_col='정류장명')
 
-# 필요한 함수들 정의
-def poisson_prob(k, sigma, lam):
+# 최악 상황
+def worst_prob(k, sigma, lam):
     return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(k, int(sigma)))
+
+#total pass < remain seat
+def normal_prob(k, lam):
+    return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(0, int(k)))
 
 def get_bus_location(route_id):
     # 이 함수는 실제 API나 다른 데이터 소스에서 버스 위치 정보를 가져와야 합니다.
@@ -17,8 +21,9 @@ def get_bus_location(route_id):
 def calculate_boarding_probability(route_id, target_station, current_time, passenger_data):
     current_bus, next_bus = get_bus_location(route_id)
     
-    remain_seat = 60
-    time_slot = f"18시_승하차" #f"{current_time.hour}시_승하차"
+    remain_seat = 49
+    time_slot = f"17시_승하차" #current_time.hour
+    search_time = current_time.minute
     
     station_list = passenger_data.index.tolist()
     relevant_stations = station_list[current_bus:target_station+1]
@@ -29,29 +34,28 @@ def calculate_boarding_probability(route_id, target_station, current_time, passe
     probabilities = []
     
     for station in relevant_stations:
-        station_index = relevant_stations.index(station)
         
-        avg_pass = passenger_data.loc[station, f"{time_slot}"]
+        total_pass = passenger_data.loc[station, f"{time_slot}"]
         
-        if isinstance(avg_pass, pd.Series):
-            avg_pass = avg_pass.iloc[0]
-        if pd.isna(avg_pass):
-            avg_pass = 0
+        if isinstance(total_pass, pd.Series):
+            total_pass = total_pass.iloc[0]
+        if pd.isna(total_pass):
+            total_pass = 0
         
-        total_pass = max(0, avg_pass * total_bus)
-        bus_arrival_time = 19 + station_index * 10
+        avg_pass = max(0, total_pass / total_bus)
         
-        buses_until_now = int(bus_arrival_time / time_interval)
-        if bus_arrival_time < 30:
+        buses_until_now = max(1, int(search_time / time_interval))
+        if search_time < 30:
             buses_until_now = total_bus - buses_until_now
         
-        pass_per_time = total_pass / buses_until_now if buses_until_now > 0 else 0
+        pass_per_time = total_pass / total_bus * buses_until_now
         
         target_pass = int(total_pass - remain_seat)
         if target_pass <= 0:
-            prob = 1
+            prob = normal_prob(remain_seat, pass_per_time)
         else:
-            prob = poisson_prob(target_pass, total_pass, pass_per_time)
+            prob = worst_prob(target_pass, total_pass, pass_per_time)
+            
         probabilities.append((station, prob))
         
         if remain_seat > 0:

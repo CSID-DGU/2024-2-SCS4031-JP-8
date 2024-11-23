@@ -130,7 +130,14 @@ export default {
                       busNo: busNo,
                       directionText: directionText(direction),
                       stationID: segment.startID,
-                      stationName: segment.startName
+                      stationName: segment.startName,
+                      firstStation: {
+                        name: stations[0]?.stationName, // 첫 번째 정류장 이름
+                        id: stations[0]?.stationID, // 첫 번째 정류장 ID
+                        direction: directionText(
+                          stations[0]?.stationDirection === 2 ? 'up' : 'down'
+                        ) // 첫 번째 정류장 방향
+                      }
                     })
                   } catch (error) {
                     console.error(`busLaneDetail API 호출 오류 발생: ${error}`)
@@ -183,7 +190,10 @@ export default {
         month: store.state.time.month,
         day: store.state.time.day,
         hour: store.state.time.hour,
-        minute: store.state.time.minute
+        minute: store.state.time.minute,
+        firstStationName: route.firstStation.name, // ******** 첫 번째 정류장 이름
+        firstStationID: route.firstStation.id, // ******** 첫 번째 정류장 ID
+        firstStationDirection: route.firstStation.direction // ******** 첫 번째 정류장 방향
       })
 
       router.push({
@@ -202,7 +212,10 @@ export default {
           month: store.state.time.month,
           day: store.state.time.day,
           hour: store.state.time.hour,
-          minute: store.state.time.minute
+          minute: store.state.time.minute,
+          firstStationName: route.firstStation.name, // ******** 첫 번째 정류장 이름
+          firstStationID: route.firstStation.id, // ******** 첫 번째 정류장 ID
+          firstStationDirection: route.firstStation.direction // ******** 첫 번째 정류장 방향
         }
       })
     }

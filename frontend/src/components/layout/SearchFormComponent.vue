@@ -197,9 +197,19 @@ const openTimeModal = () => {
 }
 
 const switchLocations = () => {
-  const tempDeparture = departureName.value
-  departureName.value = destinationName.value
-  destinationName.value = tempDeparture
+  // 현재 출발지와 도착지 정보 가져오기
+  const tempDeparture = {
+    name: store.state.departure.departure?.name || '',
+    coordinates: store.state.departure.departure?.coordinates || {}
+  }
+  const tempDestination = {
+    name: store.state.destination.destination?.name || '',
+    coordinates: store.state.destination.destination?.coordinates || {}
+  }
+
+  // 출발지와 도착지를 Vuex에 저장
+  store.commit('departure/setDeparture', tempDestination)
+  store.commit('destination/setDestination', tempDeparture)
 }
 
 const confirmTime = () => {

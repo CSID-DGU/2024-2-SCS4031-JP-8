@@ -122,10 +122,15 @@ export async function fetchBusArrivalInfo(stationId, busNo, timeInfo) {
           ) || 0,
         plateNo: busArrivalItem.querySelector('plateNo1')?.textContent || '',
         remainSeats:
-          parseInt(
-            busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
-            10
-          ) || -1
+          busArrivalItem.querySelector('remainSeatCnt1')?.textContent !==
+            null &&
+          busArrivalItem.querySelector('remainSeatCnt1')?.textContent !==
+            undefined
+            ? parseInt(
+                busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
+                10
+              )
+            : -1
       },
       secondBus: {
         locationNo:
@@ -145,10 +150,15 @@ export async function fetchBusArrivalInfo(stationId, busNo, timeInfo) {
           ) || 0,
         plateNo: busArrivalItem.querySelector('plateNo2')?.textContent || '',
         remainSeats:
-          parseInt(
-            busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
-            10
-          ) || -1
+          busArrivalItem.querySelector('remainSeatCnt2')?.textContent !==
+            null &&
+          busArrivalItem.querySelector('remainSeatCnt2')?.textContent !==
+            undefined
+            ? parseInt(
+                busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
+                10
+              )
+            : -1
       }
     }
 

@@ -23,7 +23,7 @@ export const busRouteData = {
     busLocalBlID: 228000388,
     routeId: 228000388,
     region: '용인',
-    folderPath: '../public/csv/5000A/'
+    folderPath: '../../../../public/csv/5000A/'
   },
   '5000B': {
     busID: 11011,
@@ -31,7 +31,7 @@ export const busRouteData = {
     busLocalBlID: 228000174,
     routeId: 228000174,
     region: '용인',
-    folderPath: '../public/csv/5000B/'
+    folderPath: '../../../../public/csv/5000B/'
   },
   1112: {
     busID: 10052,
@@ -39,7 +39,7 @@ export const busRouteData = {
     busLocalBlID: 234000016,
     routeId: 234000016,
     region: '수원',
-    folderPath: '../public/csv/1112/'
+    folderPath: '../../../../public/csv/1112/'
   },
   6001: {
     busID: 16017,
@@ -47,7 +47,7 @@ export const busRouteData = {
     busLocalBlID: 233000131,
     routeId: 233000131,
     region: '화성',
-    folderPath: '../public/csv/6001/'
+    folderPath: '../../../../public/csv/6001/'
   },
   M7731: {
     busID: 5541,
@@ -55,6 +55,6 @@ export const busRouteData = {
     busLocalBlID: 218000158,
     routeId: 218000158,
     region: '고양',
-    folderPath: '../public/csv/M7731/'
+    folderPath: '../../../../public/csv/M7731/'
   }
 }

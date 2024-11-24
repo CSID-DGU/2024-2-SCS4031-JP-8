@@ -11,20 +11,33 @@ import Papa from 'papaparse'
  */
 async function fetchAverageReboarding(filePath, stationName, timeSlot) {
   try {
+    console.log(`[INFO] CSV 로드 시도: ${filePath}`)
     const response = await fetch(filePath)
     const csvText = await response.text()
+
+    console.log('[DEBUG] CSV 파일 내용:', csvText.slice(0, 500)) // 500자만 출력
 
     const parsedData = Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true
     }).data
 
+    console.log('[DEBUG] CSV 파싱 결과:', parsedData)
+
     const stationData = parsedData.find(
       (row) => row['정류장명'] === stationName
     )
-    return stationData && stationData[timeSlot]
-      ? parseFloat(stationData[timeSlot]) || 0
-      : 0
+
+    const avgReboarding =
+      stationData && stationData[timeSlot]
+        ? parseFloat(stationData[timeSlot]) || 0
+        : 0
+
+    console.log(
+      `[INFO] ${stationName}의 ${timeSlot} 평균 재차 인원: ${avgReboarding}`
+    )
+
+    return avgReboarding
   } catch (error) {
     console.error('[ERROR] CSV 로드 실패:', error)
     return 0 // 실패 시 0 반환
@@ -39,12 +52,22 @@ async function fetchAverageReboarding(filePath, stationName, timeSlot) {
  * @returns {Object} 실시간 버스 도착 정보 또는 계산된 대체 데이터
  */
 export async function fetchBusArrivalInfo(stationId, busNo, timeInfo) {
+  console.log('[INFO] Vuex에서 전달받은 데이터:', {
+    stationId,
+    busNo,
+    timeInfo
+  })
+
   const serviceKey =
     'EVTsGjdsoUlBtJTpdh/itgFJXzeeNK/BP4lN8my+i9AaoLGNln1kqRcyVP7CVRY8GsiXkX+OMl2HviEvq6hlfQ=='
 
   const routeId = busRouteData[busNo]?.routeId
   const folderPath = busRouteData[busNo]?.folderPath
   const startStations = busStartStations[busNo]
+
+  console.log('[DEBUG] routeId:', routeId)
+  console.log('[DEBUG] folderPath:', folderPath)
+  console.log('[DEBUG] startStations:', startStations)
 
   if (!routeId || !folderPath || !startStations) {
     console.error(`[ERROR] 노선 데이터가 불완전합니다. 노선 번호: ${busNo}`)
@@ -56,6 +79,7 @@ export async function fetchBusArrivalInfo(stationId, busNo, timeInfo) {
 
   try {
     // 1. API 호출
+    console.log('[INFO] 실시간 도착 정보 API 호출 중...')
     const response = await axios.get(
       'http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
       {
@@ -138,23 +162,18 @@ export async function fetchBusArrivalInfo(stationId, busNo, timeInfo) {
     )
 
     // 3. 실시간 데이터가 없을 경우 대체 데이터 계산
-    const now = new Date()
+    console.log('[INFO] 대체 데이터 계산 시작...')
     const timeSlot = `${timeInfo.hour}시`
-    const dayType =
-      now.getDay() === 0
-        ? 'sunday'
-        : now.getDay() === 6
-        ? 'saturday'
-        : 'weekday'
+    const dayType = timeInfo.dayType || 'weekday' // Vuex에서 전달된 요일 정보 사용
     const filePath = `${folderPath}${busNo}_${dayType}.csv`
 
-    const stationName = Object.keys(busStartStations)
-      .filter((key) => key === busNo)
-      .map((key) => key)
+    console.log('[INFO] CSV 경로:', filePath)
+    console.log('[INFO] 대상 정류장명:', stationId)
+    console.log('[INFO] 시간대:', timeSlot)
 
     const avgReboarding = await fetchAverageReboarding(
       filePath,
-      stationName,
+      stationId,
       timeSlot
     )
 

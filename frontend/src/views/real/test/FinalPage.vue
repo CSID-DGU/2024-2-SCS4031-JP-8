@@ -51,6 +51,11 @@ export default {
       timeSlot: '' // 시간대
     }
   },
+  computed: {
+    timeInfo() {
+      return this.$store.getters['time/getTime']
+    }
+  },
   async mounted() {
     const query = this.$route.query
     this.busNo = query.busNo
@@ -62,6 +67,12 @@ export default {
       direction: this.direction,
       stationName: this.stationName
     })
+
+    if (!this.timeInfo || !this.timeInfo.hour) {
+      console.error('[ERROR] Vuex에서 시간 정보가 비어 있습니다.')
+      return
+    }
+    console.log('[INFO] Vuex에서 가져온 시간 정보:', this.timeInfo)
 
     try {
       // 1. 노선 상세 데이터 가져오기
@@ -111,7 +122,8 @@ export default {
         console.log('[INFO] 도착 정보 API 호출 시작...')
         const arrivalData = await fetchBusArrivalInfo(
           this.firstStationLocalID,
-          this.busNo
+          this.busNo,
+          this.timeInfo // Vuex에서 가져온 시간 정보 전달
         )
         console.log('[INFO] 도착 정보 API 응답:', arrivalData)
 
@@ -120,8 +132,7 @@ export default {
         // 6. CSV 경로 및 시간대 계산
         const dayType = this.getDayType()
         this.filePath = `/csv/${this.busNo}/passengers/${this.busNo}_${dayType}.csv`
-        const now = new Date()
-        this.timeSlot = `${now.getHours()}시`
+        this.timeSlot = `${this.timeInfo.hour}시`
 
         // 7. 포아송 확률 계산
         const startSeq = this.filteredStations[0]?.idx
@@ -135,7 +146,7 @@ export default {
           endSeq,
           filePath: this.filePath,
           timeSlot: this.timeSlot,
-          stations: stations
+          stations
         })
 
         console.log('[INFO] 계산된 탑승 확률 데이터:', this.selectedStations)

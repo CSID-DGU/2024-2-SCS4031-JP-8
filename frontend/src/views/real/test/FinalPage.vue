@@ -53,7 +53,7 @@
 <script>
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
-import { busRouteData, busTargetStations } from './busData'
+import { busRouteData } from './busData'
 import { calculateBoardingProbability } from './poisson'
 
 export default {
@@ -107,7 +107,6 @@ export default {
 
       const directionCode = this.direction === '상행' ? 2 : 1
       console.log('[DEBUG] directionCode:', directionCode)
-      console.log('[DEBUG] 전체 정류장 데이터:', busData.station)
 
       const stations = busData.station
         .map((station, index, fullList) => {
@@ -151,23 +150,20 @@ export default {
         console.log('[INFO] 시간대 정보:', this.timeSlot)
 
         const endSeq =
-          busTargetStations[this.busNo]?.[
-            this.direction === '상행' ? 'up' : 'down'
-          ]
-
-        if (endSeq === undefined) {
+          this.filteredStations[this.filteredStations.length - 1]?.idx
+        if (!endSeq) {
           console.error(
-            `[ERROR] 종점 정보를 찾을 수 없습니다. 노선 번호: ${this.busNo}`
+            '[ERROR] endSeq를 찾을 수 없습니다. filteredStations가 비어있습니다.'
           )
           return
         }
 
-        console.log('[INFO] 종점 순번:', endSeq)
+        console.log('[INFO] 마지막 정류장 순번:', endSeq)
 
         this.selectedStations = await calculateBoardingProbability({
           arrivalInfo: this.arrivalInfo.firstBus?.remainSeats || 0,
           startSeq: this.filteredStations[0]?.idx,
-          endSeq,
+          endSeq, // filteredStations의 마지막 정류장 순번 사용
           filePath: this.filePath,
           timeSlot: this.timeSlot,
           stations

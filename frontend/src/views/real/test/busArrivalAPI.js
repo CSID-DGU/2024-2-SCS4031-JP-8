@@ -6,14 +6,14 @@ import Papa from 'papaparse'
  * 요일 계산 함수
  * @param {number} month - 월
  * @param {number} day - 일
- * @returns {string} 'weekday', 'saturday', 'sunday'
+ * @returns {string} '평일', '토요일', '일요일'
  */
 function getDayType(month, day) {
   const date = new Date(2024, month - 1, day) // JavaScript의 month는 0부터 시작
   const dayOfWeek = date.getDay() // 0: 일요일, 6: 토요일
-  if (dayOfWeek === 0) return 'sunday'
-  if (dayOfWeek === 6) return 'saturday'
-  return 'weekday'
+  if (dayOfWeek === 0) return '일요일'
+  if (dayOfWeek === 6) return '토요일'
+  return '평일'
 }
 
 /**
@@ -63,7 +63,7 @@ async function fetchAverageReboarding(filePath, stationName, timeSlot) {
  * @param {string} stationName - 정류장명
  * @param {string} busNo - 노선 번호
  * @param {Object} timeInfo - 시간 정보 객체 (월, 일, 시, 분)
- * @returns {number} Poisson.js로 전달할 여석 값
+ * @returns {Object} 실시간 데이터와 대체 데이터를 포함한 `arrivalInfo`
  */
 export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
   console.log('[INFO] Vuex에서 전달받은 데이터:', {
@@ -83,11 +83,17 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
   console.log('[DEBUG] folderPath:', folderPath)
   console.log('[DEBUG] startStations:', startStations)
 
-  let remainSeatsForPoisson = 0 // Poisson.js로 전달할 기본 값
-
   if (!routeId || !folderPath || !startStations) {
     console.error(`[ERROR] 노선 데이터가 불완전합니다. 노선 번호: ${busNo}`)
-    return remainSeatsForPoisson
+    return {
+      firstBus: { locationNo: -1, predictTime: -1, remainSeats: 0 },
+      secondBus: { locationNo: -1, predictTime: -1, remainSeats: 0 }
+    }
+  }
+
+  let arrivalInfo = {
+    firstBus: { locationNo: -1, predictTime: -1, remainSeats: 0 },
+    secondBus: { locationNo: -1, predictTime: -1, remainSeats: 0 }
   }
 
   try {
@@ -109,22 +115,13 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
     // 2. XML 파싱
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(response.data, 'text/xml')
-
     const busArrivalItem = xmlDoc.querySelector('busArrivalItem')
+
     if (!busArrivalItem) {
       throw new Error('도착 정보가 없습니다.')
     }
 
-    const remainSeats1 = parseInt(
-      busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
-      10
-    )
-    const remainSeats2 = parseInt(
-      busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
-      10
-    )
-
-    const arrivalInfo = {
+    arrivalInfo = {
       firstBus: {
         locationNo: parseInt(
           busArrivalItem.querySelector('locationNo1')?.textContent,
@@ -134,7 +131,11 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
           busArrivalItem.querySelector('predictTime1')?.textContent,
           10
         ),
-        remainSeats: remainSeats1 ?? -1
+        remainSeats:
+          parseInt(
+            busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
+            10
+          ) ?? 0
       },
       secondBus: {
         locationNo: parseInt(
@@ -145,31 +146,23 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
           busArrivalItem.querySelector('predictTime2')?.textContent,
           10
         ),
-        remainSeats: remainSeats2 ?? -1
+        remainSeats:
+          parseInt(
+            busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
+            10
+          ) ?? 0
       }
     }
 
     console.log('[INFO] 실시간 도착 정보:', arrivalInfo)
-
-    // 3. Poisson.js로 전달할 여석 결정
-    if (arrivalInfo.firstBus.remainSeats >= 0) {
-      remainSeatsForPoisson = arrivalInfo.firstBus.remainSeats
-    }
-
-    console.log(
-      '[INFO] Poisson 계산으로 전달할 여석 값 (실시간):',
-      remainSeatsForPoisson
-    )
-
-    return remainSeatsForPoisson // 실시간 데이터로 반환
+    return arrivalInfo // 실시간 데이터를 반환
   } catch (apiError) {
     console.warn('[WARN] 실시간 API 호출 실패:', apiError)
   }
 
-  // 4. 실시간 API 실패 또는 유효하지 않은 경우 CSV 데이터 사용
+  // 3. 실시간 API 실패 시 CSV 데이터를 사용하여 대체
   console.log('[INFO] CSV 데이터를 사용하여 대체 계산을 시작합니다...')
   const timeSlot = `${timeInfo.hour}시`
-
   const dayType = getDayType(timeInfo.month, timeInfo.day)
   const filePath = `${folderPath}${busNo}_${dayType}.csv`
 
@@ -183,14 +176,15 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
     timeSlot
   )
 
-  // 배차 대수 (기본값: 6)
   const dispatchCount = busRouteData[busNo]?.dispatchCount || 6
-  const fallbackRemainSeats = Math.max(0, (60 - avgReboarding) / dispatchCount)
+  arrivalInfo.firstBus.remainSeats = Math.max(
+    0,
+    (60 - avgReboarding) / dispatchCount
+  )
 
   console.log(
     '[INFO] Poisson 계산으로 전달할 여석 값 (대체):',
-    fallbackRemainSeats
+    arrivalInfo.firstBus.remainSeats
   )
-
-  return fallbackRemainSeats // CSV 데이터로 반환
+  return arrivalInfo // 대체 데이터를 포함한 전체 정보 반환
 }

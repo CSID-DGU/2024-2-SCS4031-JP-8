@@ -25,6 +25,23 @@
       </div>
     </div>
 
+    <!-- 모든 정류장의 확률 표시 -->
+    <div v-if="filteredStations.length" class="all-stations">
+      <h3>모든 정류장의 탑승 확률</h3>
+      <div
+        v-for="station in filteredStations"
+        :key="station.idx"
+        class="station-probability"
+      >
+        <h4>{{ station.stationName }}</h4>
+        <p>정류장 순번: {{ station.idx }}</p>
+        <p>
+          탑승 확률:
+          {{ calculateProbabilityForStation(station.idx).toFixed(2) }}%
+        </p>
+      </div>
+    </div>
+
     <!-- 확률 계산 실패 시 -->
     <div v-else>
       <h3>탑승 확률을 계산할 수 없습니다.</h3>
@@ -36,7 +53,7 @@
 <script>
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
-import { busRouteData, busTargetStations } from './busData'
+import { busRouteData } from './busData'
 import { calculateBoardingProbability } from './poisson'
 
 export default {
@@ -89,28 +106,33 @@ export default {
       }
 
       const directionCode = this.direction === '상행' ? 2 : 1
+      console.log('[DEBUG] directionCode:', directionCode)
+
       const stations = busData.station
+        .map((station, index, fullList) => {
+          const nonStopCount = fullList
+            .slice(0, index)
+            .filter((prevStation) => prevStation.nonstopStation === 1).length
+
+          return {
+            ...station,
+            idx: station.idx - nonStopCount
+          }
+        })
         .filter(
           (station) =>
             station.stationDirection === directionCode &&
             station.nonstopStation === 0
         )
-        .map((station, index) => ({
-          ...station,
-          idx: index, // 기존 index + 1에서 index로 수정
-          localStationID: station.localStationID
-        }))
 
       console.log('[INFO] 필터링된 정류장 데이터:', stations)
 
-      // 최대 5개의 정류장 선택
       this.filteredStations = stations.slice(0, 5)
 
       const firstStation = this.filteredStations[0]
       if (firstStation) {
         console.log('[INFO] 첫 정류장:', firstStation)
 
-        // 실시간 도착 정보 가져오기
         const arrivalData = await fetchBusArrivalInfo(
           firstStation.localStationID,
           this.busNo,
@@ -120,34 +142,27 @@ export default {
 
         console.log('[INFO] 실시간 도착 정보:', this.arrivalInfo)
 
-        const dayType = this.getDayType()
-        this.filePath = `/csv/${this.busNo}/passengers/${this.busNo}_${dayType}.csv`
+        await this.setFilePath() // CSV 파일 경로 설정
         this.timeSlot = `${this.timeInfo.hour}시`
 
         console.log('[INFO] CSV 파일 경로:', this.filePath)
         console.log('[INFO] 시간대 정보:', this.timeSlot)
 
-        // 종점 순번 가져오기
         const endSeq =
-          busTargetStations[this.busNo]?.[
-            this.direction === '상행' ? 'up' : 'down'
-          ]
-
-        if (endSeq === undefined) {
+          this.filteredStations[this.filteredStations.length - 1]?.idx
+        if (!endSeq) {
           console.error(
-            `[ERROR] 종점 정보를 찾을 수 없습니다. 노선 번호: ${this.busNo}`
+            '[ERROR] endSeq를 찾을 수 없습니다. filteredStations가 비어있습니다.'
           )
           return
         }
 
-        console.log('[INFO] 종점 순번:', endSeq)
+        console.log('[INFO] 마지막 정류장 순번:', endSeq)
 
-        // 포아송 확률 계산
         this.selectedStations = await calculateBoardingProbability({
-          arrivalInfo: this.arrivalInfo,
-          routeId: this.routeId,
+          arrivalInfo: this.arrivalInfo.firstBus?.remainSeats || 0,
           startSeq: this.filteredStations[0]?.idx,
-          endSeq,
+          endSeq, // filteredStations의 마지막 정류장 순번 사용
           filePath: this.filePath,
           timeSlot: this.timeSlot,
           stations
@@ -163,7 +178,27 @@ export default {
     getDayType() {
       const now = new Date()
       const day = now.getDay()
-      return day === 0 ? '일요일' : day === 6 ? '토요일' : '평일'
+      // 한국어 요일 반환
+      if (day === 0) {
+        return '일요일'
+      } else if (day === 6) {
+        return '토요일'
+      } else {
+        return '평일'
+      }
+    },
+    async setFilePath() {
+      const dayType = this.getDayType() // 올바른 요일명 가져오기
+      const csvFolderPath = `/csv/${this.busNo}/passengers/` // 기본 경로
+      this.filePath = `${csvFolderPath}${this.busNo}_${dayType}.csv` // 올바른 파일 경로 설정
+      console.log('[INFO] CSV 파일 경로:', this.filePath)
+    },
+    calculateProbabilityForStation(idx) {
+      const station = this.filteredStations.find((s) => s.idx === idx)
+      if (!station) return 0
+
+      const probability = this.selectedStations.find((s) => s.seq === idx)
+      return probability ? probability.probability : 0
     }
   }
 }
@@ -184,5 +219,18 @@ export default {
 }
 .result {
   margin-bottom: 15px;
+}
+.all-stations {
+  margin-top: 30px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
+.station-probability {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+.station-probability.high-probability {
+  background-color: #f0f8ff;
 }
 </style>

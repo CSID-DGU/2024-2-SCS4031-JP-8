@@ -1,7 +1,7 @@
 //종점 정보
 export const busTargetStations = {
   '5000A': { up: 57, down: 28 },
-  '5000B': { up: 78, down: 41 },
+  '5000B': { up: 78, down: 39 },
   6001: { up: 41, down: 18 },
   1112: { up: 51, down: 24 },
   M7731: { up: 25, down: 10 }
@@ -10,7 +10,7 @@ export const busTargetStations = {
 // 기점 정보
 export const busStartStations = {
   '5000A': { up: 29, down: 0 }, // 하행: 0, 상행: down + 1
-  '5000B': { up: 42, down: 0 },
+  '5000B': { up: 40, down: 0 },
   6001: { up: 19, down: 0 },
   1112: { up: 25, down: 0 },
   M7731: { up: 11, down: 0 }

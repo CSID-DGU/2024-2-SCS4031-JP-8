@@ -1,120 +1,190 @@
-// 필요한 라이브러리 가져오기
-const fs = require('fs')
-const math = require('mathjs')
-const { parse } = require('csv-parse/sync')
+import axios from 'axios'
+import { busRouteData, busStartStations } from './busData'
+import Papa from 'papaparse'
 
-// CSV 파일에서 승차 인원 데이터를 읽어오는 함수
-function loadPassengerData(filePath) {
-  const data = fs.readFileSync(filePath, 'utf8')
-  const records = parse(data, { columns: true })
-  const passengerData = {}
-  records.forEach((record) => {
-    passengerData[record['정류장명']] = record
+/**
+ * 요일 계산 함수
+ * @param {number} month - 월
+ * @param {number} day - 일
+ * @returns {string} 'weekday', 'saturday', 'sunday'
+ */
+function getDayType(month, day) {
+  const date = new Date(2024, month - 1, day) // JavaScript의 month는 0부터 시작
+  const dayOfWeek = date.getDay() // 0: 일요일, 6: 토요일
+  if (dayOfWeek === 0) return 'sunday'
+  if (dayOfWeek === 6) return 'saturday'
+  return 'weekday'
+}
+
+/**
+ * CSV 파일에서 정류장별 평균 재차 인원 가져오기
+ * @param {string} filePath - CSV 파일 경로
+ * @param {string} stationName - 정류장명
+ * @param {string} timeSlot - 시간대 (예: '17시')
+ * @returns {number} 평균 재차 인원 (정류장 데이터가 없으면 0 반환)
+ */
+async function fetchAverageReboarding(filePath, stationName, timeSlot) {
+  try {
+    console.log(`[INFO] CSV 로드 시도: ${filePath}`)
+    const response = await fetch(filePath)
+    const csvText = await response.text()
+
+    console.log('[DEBUG] CSV 파일 내용:', csvText.slice(0, 500)) // 500자만 출력
+
+    const parsedData = Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true
+    }).data
+
+    console.log('[DEBUG] CSV 파싱 결과:', parsedData)
+
+    const stationData = parsedData.find(
+      (row) => row['정류장명'] === stationName
+    )
+
+    const avgReboarding =
+      stationData && stationData[timeSlot]
+        ? parseFloat(stationData[timeSlot]) || 0
+        : 0
+
+    console.log(
+      `[INFO] ${stationName}의 ${timeSlot} 평균 재차 인원: ${avgReboarding}`
+    )
+
+    return avgReboarding
+  } catch (error) {
+    console.error('[ERROR] CSV 로드 실패:', error)
+    return 0 // 실패 시 0 반환
+  }
+}
+
+/**
+ * 경기도 공공데이터포털 버스 도착 정보 API 호출 함수
+ * @param {string} stationName - 정류장명
+ * @param {string} busNo - 노선 번호
+ * @param {Object} timeInfo - 시간 정보 객체 (월, 일, 시, 분)
+ * @returns {Object} 실시간 데이터와 대체 데이터를 포함한 `arrivalInfo`
+ */
+export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
+  console.log('[INFO] Vuex에서 전달받은 데이터:', {
+    stationName,
+    busNo,
+    timeInfo
   })
-  return passengerData
-}
 
-// 실시간 버스 위치 정보를 가져오는 함수 (예시)
-function getBusLocation(routeId) {
-  // 실제로는 API를 호출해야 하지만, 여기서는 예시 값을 반환
-  return [39, 40] // 현재 정류장, 다음 정류장
-}
+  const serviceKey =
+    'EVTsGjdsoUlBtJTpdh/itgFJXzeeNK/BP4lN8my+i9AaoLGNln1kqRcyVP7CVRY8GsiXkX+OMl2HviEvq6hlfQ=='
 
-// 포아송 확률 계산 함수
-function poissonProb(k, sigma, lam) {
-  let sum = 0
-  for (let i = k; i < sigma; i++) {
-    sum += (math.exp(-lam) * Math.pow(lam, i)) / math.factorial(i)
-  }
-  return sum
-}
+  const routeId = busRouteData[busNo]?.routeId
+  const folderPath = `/csv/${busNo}/` // 절대 경로 사용
+  const startStations = busStartStations[busNo]
 
-// 메인 함수
-function calculateBoardingProbability(
-  routeId,
-  targetStation,
-  currentTime,
-  passengerData
-) {
-  const [currentStation, nextStation] = getBusLocation(routeId)
+  console.log('[DEBUG] routeId:', routeId)
+  console.log('[DEBUG] folderPath:', folderPath)
+  console.log('[DEBUG] startStations:', startStations)
 
-  // 남은 좌석 수 (예시 값, 실제로는 API나 다른 소스에서 가져와야 함)
-  let remainSeat = 31
-
-  // 현재 시간을 시간대로 변환 (예: '17시')
-  const timeSlot = `${currentTime.getHours()}시`
-
-  // 현재 정류장부터 목표 정류장까지의 데이터 필터링
-  const stationList = Object.keys(passengerData)
-  const startIndex = currentStation
-  const endIndex = targetStation
-  const relevantStations = stationList.slice(startIndex, endIndex + 1)
-  const alreadyPass = stationList[startIndex - 1]
-
-  const timeInterval = 10 // 배차 간격 (분)
-  const totalBus = 60 / timeInterval // 시간당 배차수
-
-  const probabilities = []
-
-  for (const station of relevantStations) {
-    const stationIndex = relevantStations.indexOf(station)
-
-    let avgPass
-    if (stationIndex === 0) {
-      avgPass =
-        parseFloat(passengerData[station][timeSlot]) -
-        parseFloat(passengerData[alreadyPass][timeSlot])
-    } else {
-      avgPass =
-        parseFloat(passengerData[station][timeSlot]) -
-        parseFloat(passengerData[relevantStations[stationIndex - 1]][timeSlot])
+  if (!routeId || !folderPath || !startStations) {
+    console.error(`[ERROR] 노선 데이터가 불완전합니다. 노선 번호: ${busNo}`)
+    return {
+      firstBus: { locationNo: -1, predictTime: -1, remainSeats: 0 },
+      secondBus: { locationNo: -1, predictTime: -1, remainSeats: 0 }
     }
-
-    if (isNaN(avgPass)) {
-      avgPass = 0
-    }
-
-    // 각 정류장까지의 예상 소요 시간 계산 (간단한 예시)
-    const totalPass = Math.max(0, avgPass * totalBus)
-    const busArrivalTime = stationIndex * timeInterval
-
-    let busesUntilNow = Math.floor(busArrivalTime / timeInterval)
-    if (busArrivalTime < 30) {
-      busesUntilNow = totalBus - busesUntilNow
-    }
-
-    const passPerTime = totalPass / busesUntilNow
-
-    remainSeat -= avgPass
-
-    const targetPass = Math.max(1, Math.floor(totalPass - remainSeat))
-
-    const prob = poissonProb(targetPass, totalPass, passPerTime)
-    probabilities.push({ station, prob })
   }
 
-  return probabilities
-}
+  let arrivalInfo = {
+    firstBus: { locationNo: -1, predictTime: -1, remainSeats: 0 },
+    secondBus: { locationNo: -1, predictTime: -1, remainSeats: 0 }
+  }
 
-// 사용 예시
-;(async function () {
-  // CSV 파일 경로
-  const csvFilePath = '2024-2-SCS4031-JP-8/backend/sarima_weekday.csv'
+  try {
+    // 1. 실시간 API 호출
+    console.log('[INFO] 실시간 도착 정보 API 호출 중...')
+    const response = await axios.get(
+      'http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
+      {
+        params: {
+          serviceKey,
+          stationId: stationName,
+          routeId
+        }
+      }
+    )
 
-  // CSV 파일에서 데이터 로드
-  const passengerData = loadPassengerData(csvFilePath)
+    console.log('[DEBUG] 원본 API 응답:', response.data)
 
-  const routeId = '5000B번'
-  const targetStation = 44
-  const currentTime = new Date()
+    // 2. XML 파싱
+    const parser = new DOMParser()
+    const xmlDoc = parser.parseFromString(response.data, 'text/xml')
+    const busArrivalItem = xmlDoc.querySelector('busArrivalItem')
 
-  const results = calculateBoardingProbability(
-    routeId,
-    targetStation,
-    currentTime,
-    passengerData
+    if (!busArrivalItem) {
+      throw new Error('도착 정보가 없습니다.')
+    }
+
+    arrivalInfo = {
+      firstBus: {
+        locationNo: parseInt(
+          busArrivalItem.querySelector('locationNo1')?.textContent,
+          10
+        ),
+        predictTime: parseInt(
+          busArrivalItem.querySelector('predictTime1')?.textContent,
+          10
+        ),
+        remainSeats:
+          parseInt(
+            busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
+            10
+          ) ?? 0
+      },
+      secondBus: {
+        locationNo: parseInt(
+          busArrivalItem.querySelector('locationNo2')?.textContent,
+          10
+        ),
+        predictTime: parseInt(
+          busArrivalItem.querySelector('predictTime2')?.textContent,
+          10
+        ),
+        remainSeats:
+          parseInt(
+            busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
+            10
+          ) ?? 0
+      }
+    }
+
+    console.log('[INFO] 실시간 도착 정보:', arrivalInfo)
+    return arrivalInfo // 실시간 데이터를 반환
+  } catch (apiError) {
+    console.warn('[WARN] 실시간 API 호출 실패:', apiError)
+  }
+
+  // 3. 실시간 API 실패 시 CSV 데이터를 사용하여 대체
+  console.log('[INFO] CSV 데이터를 사용하여 대체 계산을 시작합니다...')
+  const timeSlot = `${timeInfo.hour}시`
+  const dayType = getDayType(timeInfo.month, timeInfo.day)
+  const filePath = `${folderPath}${busNo}_${dayType}.csv`
+
+  console.log('[INFO] CSV 경로:', filePath)
+  console.log('[INFO] 대상 정류장명:', stationName)
+  console.log('[INFO] 시간대:', timeSlot)
+
+  const avgReboarding = await fetchAverageReboarding(
+    filePath,
+    stationName,
+    timeSlot
   )
-  results.forEach(({ station, prob }) => {
-    console.log(`정류장 ${station}의 탑승 확률: ${(prob * 100).toFixed(2)}%`)
-  })
-})()
+
+  const dispatchCount = busRouteData[busNo]?.dispatchCount || 6
+  arrivalInfo.firstBus.remainSeats = Math.max(
+    0,
+    (60 - avgReboarding) / dispatchCount
+  )
+
+  console.log(
+    '[INFO] Poisson 계산으로 전달할 여석 값 (대체):',
+    arrivalInfo.firstBus.remainSeats
+  )
+  return arrivalInfo // 대체 데이터를 포함한 전체 정보 반환
+}

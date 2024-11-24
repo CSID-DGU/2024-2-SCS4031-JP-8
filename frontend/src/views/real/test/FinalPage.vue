@@ -89,28 +89,35 @@ export default {
       }
 
       const directionCode = this.direction === '상행' ? 2 : 1
+      console.log('[DEBUG] directionCode:', directionCode)
+      console.log('[DEBUG] 전체 정류장 데이터:', busData.station)
+
+      // 정류장 리스트 필터링 및 순번 재계산
       const stations = busData.station
+        .map((station, index, fullList) => {
+          const nonStopCount = fullList
+            .slice(0, index)
+            .filter((prevStation) => prevStation.nonstopStation === 1).length
+
+          return {
+            ...station,
+            idx: station.idx - nonStopCount
+          }
+        })
         .filter(
           (station) =>
             station.stationDirection === directionCode &&
             station.nonstopStation === 0
         )
-        .map((station, index) => ({
-          ...station,
-          idx: index, // 기존 index + 1에서 index로 수정
-          localStationID: station.localStationID
-        }))
 
       console.log('[INFO] 필터링된 정류장 데이터:', stations)
 
-      // 최대 5개의 정류장 선택
       this.filteredStations = stations.slice(0, 5)
 
       const firstStation = this.filteredStations[0]
       if (firstStation) {
         console.log('[INFO] 첫 정류장:', firstStation)
 
-        // 실시간 도착 정보 가져오기
         const arrivalData = await fetchBusArrivalInfo(
           firstStation.localStationID,
           this.busNo,
@@ -127,7 +134,6 @@ export default {
         console.log('[INFO] CSV 파일 경로:', this.filePath)
         console.log('[INFO] 시간대 정보:', this.timeSlot)
 
-        // 종점 순번 가져오기
         const endSeq =
           busTargetStations[this.busNo]?.[
             this.direction === '상행' ? 'up' : 'down'
@@ -142,7 +148,6 @@ export default {
 
         console.log('[INFO] 종점 순번:', endSeq)
 
-        // 포아송 확률 계산
         this.selectedStations = await calculateBoardingProbability({
           arrivalInfo: this.arrivalInfo,
           routeId: this.routeId,
@@ -159,6 +164,7 @@ export default {
       console.error('[ERROR] 데이터 처리 실패:', error)
     }
   },
+
   methods: {
     getDayType() {
       const now = new Date()

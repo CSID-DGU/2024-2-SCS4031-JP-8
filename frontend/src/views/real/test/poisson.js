@@ -1,115 +1,117 @@
-import { calculateAvailableSeats } from './seatCalculation'
-import Papa from 'papaparse'
-
-/**
- * CSV 파일에서 승차 인원 데이터를 읽어오는 함수
- * @param {string} filePath - CSV 파일 경로 (URL 형태)
- * @returns {Promise<Object>} 정류장별 승차 인원 데이터
- */
-async function loadPassengerData(filePath) {
-  return new Promise((resolve, reject) => {
-    Papa.parse(filePath, {
-      download: true,
-      header: true,
-      encoding: 'UTF-8',
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          console.error('[ERROR] CSV 파싱 에러:', results.errors)
-          reject(results.errors)
-        } else {
-          const passengerData = {}
-          results.data.forEach((record) => {
-            passengerData[record['정류장명']] = record
-          })
-          resolve(passengerData)
-        }
-      },
-      error: (error) => {
-        console.error('[ERROR] CSV 로드 실패:', error)
-        reject(error)
-      }
-    })
-  })
-}
-
-/**
- * 팩토리얼 계산 함수
- * @param {number} n - 입력 숫자
- * @returns {number} 팩토리얼 결과
- */
-function factorial(n) {
-  if (n === 0 || n === 1) return 1
-  let result = 1
-  for (let i = 2; i <= n; i++) {
-    result *= i
-  }
-  return result
-}
-
 /**
  * 포아송 확률 계산 공식
- * @param {number} k - 목표 값
+ * @param {number} k - 최소 목표 값
+ * @param {number} sigma - 최대 목표 값
  * @param {number} lambda - 평균 값
  * @returns {number} 계산된 확률 값
  */
-function poissonProb(k, lambda) {
-  const eMinusLambda = Math.exp(-lambda)
-  const lambdaPowerK = Math.pow(lambda, k)
-  const factorialK = factorial(k)
-  return (eMinusLambda * lambdaPowerK) / factorialK
+function poissonProb(k, sigma, lambda) {
+  let sum = 0
+  for (let i = k; i <= sigma; i++) {
+    const eMinusLambda = Math.exp(-lambda)
+    const lambdaPowerK = Math.pow(lambda, i)
+    const factorialK = factorial(i)
+    sum += (eMinusLambda * lambdaPowerK) / factorialK
+  }
+  return sum
 }
 
 /**
  * 포아송 확률을 이용한 정류장별 확률 계산
  * @param {Object} options - 옵션 객체
  * @param {Object} options.arrivalInfo - 도착 정보 (여석 계산용)
- * @param {string} options.routeId - 노선 ID
  * @param {number} options.startSeq - 시작 정류장 순번
  * @param {number} options.endSeq - 종점 정류장 순번
  * @param {string} options.filePath - CSV 파일 경로
  * @param {string} options.timeSlot - 시간대 (예: '17시')
- * @param {Array} options.stations - 정류장 목록
  * @returns {Promise<Array>} 각 정류장의 확률 데이터
  */
 export async function calculateBoardingProbability({
   arrivalInfo,
-  routeId,
   startSeq,
   endSeq,
   filePath,
-  timeSlot,
-  stations
+  timeSlot
 }) {
-  // 여석 계산
-  const remainSeats = calculateAvailableSeats(arrivalInfo)
+  try {
+    console.log('[INFO] 포아송 계산 시작')
+    console.log('[INFO] 입력된 데이터:', {
+      arrivalInfo,
+      startSeq,
+      endSeq,
+      filePath,
+      timeSlot
+    })
 
-  // CSV 데이터 로드
-  const passengerData = await loadPassengerData(filePath)
+    // CSV 데이터 로드
+    const passengerData = await loadPassengerData(filePath)
+    console.log('[INFO] CSV 로드 완료. 데이터:', passengerData)
 
-  const probabilities = []
+    // 남은 좌석 정보
+    let remainSeats = arrivalInfo.firstBus?.remainSeats || 0
+    console.log('[INFO] 초기 남은 좌석 수:', remainSeats)
 
-  for (let seq = startSeq; seq <= endSeq; seq++) {
-    // 정류장 이름 및 정보 가져오기
-    const station = stations.find((s) => s.idx === seq)
-    if (!station) continue
+    const probabilities = []
 
-    const stationName = station.stationName
+    // 정류장 순번 순회
+    for (let seq = startSeq; seq <= endSeq; seq++) {
+      console.log('[DEBUG] 현재 순번:', seq)
 
-    const avgPass = parseFloat(passengerData[stationName]?.[timeSlot] || 0)
-    const totalPass = avgPass * (60 / 15) // 15분 단위 승차 인원을 시간당 환산
+      const currentStationData = passengerData[seq]
+      const previousStationData = passengerData[seq - 1] || null
 
-    const k = totalPass - remainSeats
-    const lambda = totalPass
+      if (!currentStationData) {
+        console.warn(
+          '[WARN] CSV에서 해당 순번 데이터를 찾을 수 없음. 순번:',
+          seq
+        )
+        continue
+      }
 
-    const prob = k <= 0 ? 1 : poissonProb(k, lambda)
+      // 평균 승차 인원 계산 (현재 정류장 - 이전 정류장)
+      let avgPass = parseFloat(currentStationData[timeSlot] || 0)
+      if (previousStationData) {
+        avgPass -= parseFloat(previousStationData[timeSlot] || 0)
+      }
+      avgPass = Math.max(avgPass, 0) // 음수 값 방지
 
-    probabilities.push({ stationName, probability: prob * 100 })
+      const totalPass = avgPass * (60 / 15) // 시간당 환산
+      console.log(
+        '[DEBUG] 평균 승차 인원:',
+        avgPass,
+        '시간당 승차 인원:',
+        totalPass
+      )
+
+      // 포아송 확률 계산
+      const targetPass = Math.max(1, Math.floor(totalPass - remainSeats))
+      const prob = poissonProb(targetPass, totalPass, remainSeats)
+
+      console.log('[DEBUG] 포아송 계산 값:', {
+        seq,
+        targetPass,
+        totalPass,
+        prob
+      })
+
+      probabilities.push({ seq, probability: prob * 100 })
+
+      // 남은 좌석 업데이트
+      remainSeats -= avgPass
+      remainSeats = Math.max(remainSeats, 0) // 음수 방지
+    }
+
+    console.log('[INFO] 모든 확률 결과:', probabilities)
+
+    // 60% 이상 확률 필터링
+    const filteredStations = probabilities.filter(
+      ({ probability }) => probability >= 60
+    )
+    console.log('[INFO] 60% 이상 확률 정류장:', filteredStations)
+
+    return filteredStations
+  } catch (error) {
+    console.error('[ERROR] 포아송 계산 실패:', error)
+    throw error
   }
-
-  // 60% 이상 확률 필터링
-  const filteredStations = probabilities.filter(
-    (station) => station.probability >= 60
-  )
-
-  return filteredStations
 }

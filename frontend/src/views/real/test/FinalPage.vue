@@ -25,6 +25,23 @@
       </div>
     </div>
 
+    <!-- 모든 정류장의 확률 표시 -->
+    <div v-if="filteredStations.length" class="all-stations">
+      <h3>모든 정류장의 탑승 확률</h3>
+      <div
+        v-for="station in filteredStations"
+        :key="station.idx"
+        class="station-probability"
+      >
+        <h4>{{ station.stationName }}</h4>
+        <p>정류장 순번: {{ station.idx }}</p>
+        <p>
+          탑승 확률:
+          {{ calculateProbabilityForStation(station.idx).toFixed(2) }}%
+        </p>
+      </div>
+    </div>
+
     <!-- 확률 계산 실패 시 -->
     <div v-else>
       <h3>탑승 확률을 계산할 수 없습니다.</h3>
@@ -92,7 +109,6 @@ export default {
       console.log('[DEBUG] directionCode:', directionCode)
       console.log('[DEBUG] 전체 정류장 데이터:', busData.station)
 
-      // 정류장 리스트 필터링 및 순번 재계산
       const stations = busData.station
         .map((station, index, fullList) => {
           const nonStopCount = fullList
@@ -149,8 +165,7 @@ export default {
         console.log('[INFO] 종점 순번:', endSeq)
 
         this.selectedStations = await calculateBoardingProbability({
-          arrivalInfo: this.arrivalInfo,
-          routeId: this.routeId,
+          arrivalInfo: this.arrivalInfo.firstBus?.remainSeats || 0,
           startSeq: this.filteredStations[0]?.idx,
           endSeq,
           filePath: this.filePath,
@@ -164,12 +179,18 @@ export default {
       console.error('[ERROR] 데이터 처리 실패:', error)
     }
   },
-
   methods: {
     getDayType() {
       const now = new Date()
       const day = now.getDay()
       return day === 0 ? '일요일' : day === 6 ? '토요일' : '평일'
+    },
+    calculateProbabilityForStation(idx) {
+      const station = this.filteredStations.find((s) => s.idx === idx)
+      if (!station) return 0
+
+      const probability = this.selectedStations.find((s) => s.seq === idx)
+      return probability ? probability.probability : 0
     }
   }
 }
@@ -190,5 +211,18 @@ export default {
 }
 .result {
   margin-bottom: 15px;
+}
+.all-stations {
+  margin-top: 30px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
+.station-probability {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+.station-probability.high-probability {
+  background-color: #f0f8ff;
 }
 </style>

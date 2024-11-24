@@ -142,8 +142,7 @@ export default {
 
         console.log('[INFO] 실시간 도착 정보:', this.arrivalInfo)
 
-        const dayType = this.getDayType()
-        this.filePath = `/csv/${this.busNo}/passengers/${this.busNo}_${dayType}.csv`
+        await this.setFilePath() // CSV 파일 경로 설정
         this.timeSlot = `${this.timeInfo.hour}시`
 
         console.log('[INFO] CSV 파일 경로:', this.filePath)
@@ -179,7 +178,20 @@ export default {
     getDayType() {
       const now = new Date()
       const day = now.getDay()
-      return day === 0 ? '일요일' : day === 6 ? '토요일' : '평일'
+      // 한국어 요일 반환
+      if (day === 0) {
+        return '일요일'
+      } else if (day === 6) {
+        return '토요일'
+      } else {
+        return '평일'
+      }
+    },
+    async setFilePath() {
+      const dayType = this.getDayType() // 올바른 요일명 가져오기
+      const csvFolderPath = `/csv/${this.busNo}/passengers/` // 기본 경로
+      this.filePath = `${csvFolderPath}${this.busNo}_${dayType}.csv` // 올바른 파일 경로 설정
+      console.log('[INFO] CSV 파일 경로:', this.filePath)
     },
     calculateProbabilityForStation(idx) {
       const station = this.filteredStations.find((s) => s.idx === idx)

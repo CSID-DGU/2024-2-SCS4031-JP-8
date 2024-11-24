@@ -6,14 +6,14 @@ import Papa from 'papaparse'
  * 요일 계산 함수
  * @param {number} month - 월
  * @param {number} day - 일
- * @returns {string} 'weekday', 'saturday', 'sunday'
+ * @returns {string} '평일', '토요일', '일요일'
  */
 function getDayType(month, day) {
   const date = new Date(2024, month - 1, day) // JavaScript의 month는 0부터 시작
   const dayOfWeek = date.getDay() // 0: 일요일, 6: 토요일
-  if (dayOfWeek === 0) return 'sunday'
-  if (dayOfWeek === 6) return 'saturday'
-  return 'weekday'
+  if (dayOfWeek === 0) return '일요일'
+  if (dayOfWeek === 6) return '토요일'
+  return '평일'
 }
 
 /**

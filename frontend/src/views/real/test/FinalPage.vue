@@ -13,6 +13,11 @@
       <p>정류장 ID: {{ station.stationID }}</p>
       <p>Local 정류장 ID: {{ station.localStationID }}</p>
       <p>정류장 순번: {{ station.idx }}</p>
+
+      <!-- 이동 버튼 추가 -->
+      <button class="navigate-button" @click="goToNextPage(station)">
+        {{ station.stationName }}로 이동
+      </button>
     </div>
 
     <!-- 포아송 확률 계산 결과 표시 -->
@@ -21,7 +26,6 @@
       <div v-for="result in selectedStations" :key="result.seq" class="result">
         <p>정류장 순번: {{ result.seq }}</p>
         <p>정류장명: {{ result.stationName }}</p>
-        <p>탑승 확률: {{ result.probability.toFixed(2) }}%</p>
       </div>
     </div>
 
@@ -199,6 +203,17 @@ export default {
 
       const probability = this.selectedStations.find((s) => s.seq === idx)
       return probability ? probability.probability : 0
+    },
+    goToNextPage(station) {
+      this.$router.push({
+        name: 'PathfindingPage', // PathfindingPage 라우터 이름
+        query: {
+          stationName: station.stationName,
+          x: station.x,
+          y: station.y,
+          stationID: station.stationID
+        }
+      })
     }
   }
 }
@@ -214,23 +229,18 @@ export default {
   border-bottom: 1px solid #ccc;
   padding-bottom: 10px;
 }
-.results {
-  margin-top: 20px;
+
+.navigate-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
-.result {
-  margin-bottom: 15px;
-}
-.all-stations {
-  margin-top: 30px;
-  border-top: 2px solid #eee;
-  padding-top: 20px;
-}
-.station-probability {
-  margin-bottom: 10px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 10px;
-}
-.station-probability.high-probability {
-  background-color: #f0f8ff;
+
+.navigate-button:hover {
+  background-color: #45a049;
 }
 </style>

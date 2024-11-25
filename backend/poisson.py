@@ -9,55 +9,56 @@ def poisson_prob(k, sigma, lam):
     return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(k, int(sigma)))
 
 def get_bus_location(route_id):
-    return 38, 13  # 현재 정류장 인덱스, 다음 정류장 인덱스
+    return 38 # 현재 정류장 인덱스, 다음 정류장 인덱스
 
 def calculate_boarding_probability(route_id, target_station, current_time, passenger_data):
-    current_bus, next_bus = get_bus_location(route_id)
+    current_bus = get_bus_location(route_id)
     
-    remain_seat = 64
-    time_slot = f"17시"
-    search_time = 39 #current_time.minute
+    remain_seat = 42
+    time_slot = 19
+    search_time = 38 #current_time.minute
     
     station_list = passenger_data.index.tolist()
     relevant_stations = station_list[current_bus:target_station+1]
     
-    time_interval = 15
+    time_interval = 10
     total_bus = 60 / time_interval
     
     probabilities = []
-    cumulative_prob_not_boarded = 1.0
-    prev_prob = 0
+    cumulative_prob = 1.0
     
     for station in relevant_stations:
-        total_pass = passenger_data.loc[station, f"{time_slot}"]
+        total_pass = passenger_data.loc[station, f"{time_slot}시"]
         
         if isinstance(total_pass, pd.Series):
             total_pass = total_pass.iloc[0]
         if pd.isna(total_pass):
             total_pass = 0
         
-        avg_pass = max(0, total_pass / total_bus)
+        avg_pass = int(total_pass / total_bus)
         
         buses_until_now = max(1, int(search_time / time_interval))
         #if search_time < 30:
         #    buses_until_now = total_bus - buses_until_now
         
-        pass_per_time = avg_pass * buses_until_now
+        pass_per_time = max(1, avg_pass) * buses_until_now
         
         target_pass = max(0, int(total_pass - remain_seat))
         station_prob = poisson_prob(target_pass, total_pass, pass_per_time)
         
-        conditional_prob = station_prob * cumulative_prob_not_boarded
+        cumulative_prob *= station_prob
         
-        probabilities.append((station, conditional_prob))
-        
-        # 누적 확률 업데이트
-        cumulative_prob_not_boarded *= station_prob
+        probabilities.append((station, cumulative_prob))
         
         if remain_seat > 0:
             remain_seat -= avg_pass
             remain_seat = max(0, remain_seat)
-    
+
+        search_time += 10
+        if search_time >= 60:
+            search_time -= 60
+            time_slot += 1
+            
     return probabilities
 
 # 예시 실행
@@ -70,3 +71,4 @@ result = calculate_boarding_probability(route_id, target_station, current_time, 
 print("승차 확률:")
 for station, prob in result:
     print(f"{station}: {prob:.2%}")
+    

@@ -4,14 +4,16 @@
     <div class="route-summary">
       <h2>길찾기 요약</h2>
       <p>
-        출발지: {{ departureName || '정보 없음' }} ({{ departure.x }},
-        {{ departure.y }})
+        <strong>출발지:</strong> {{ departureName || '정보 없음' }} ({{
+          departure.x
+        }}, {{ departure.y }})
       </p>
       <p>
-        도착지(정류장): {{ stationName || '정보 없음' }} ({{ station.x }},
-        {{ station.y }})
+        <strong>도착지 (정류장):</strong> {{ stationName || '정보 없음' }} ({{
+          station.x
+        }}, {{ station.y }})
       </p>
-      <p>길찾기 요청 시각: {{ formattedRequestTime }}</p>
+      <p><strong>길찾기 요청 시각:</strong> {{ formattedRequestTime }}</p>
     </div>
 
     <!-- 필터 버튼 -->
@@ -50,45 +52,11 @@
             환승 횟수: 버스 {{ route.info.busTransitCount }}회, 지하철
             {{ route.info.subwayTransitCount }}회
           </p>
-          <p>출발~도착 시간: {{ calculateTimeRange(route.info.totalTime) }}</p>
-        </div>
-
-        <!-- RouteBar 컴포넌트로 경로 표시 -->
-        <RouteBar :route="route" />
-
-        <div class="route-details">
-          <div
-            v-for="(segment, idx) in route.subPath"
-            :key="idx"
-            class="segment"
-          >
-            <!-- 도보 정보 -->
-            <div v-if="segment.trafficType === 3" class="segment-info">
-              <p>도보: {{ segment.distance }}미터</p>
-            </div>
-
-            <!-- 버스 정보 -->
-            <div v-else-if="segment.trafficType === 2" class="segment-info">
-              <p>버스 번호: {{ segment.lane[0].busNo }}</p>
-              <p>
-                출발지: {{ segment.startName }} → 도착지: {{ segment.endName }}
-              </p>
-              <p>정류장 수: {{ segment.stationCount }}</p>
-            </div>
-
-            <!-- 지하철 정보 -->
-            <div v-else-if="segment.trafficType === 1" class="segment-info">
-              <p>지하철 노선: {{ segment.lane[0].name }}</p>
-              <p>
-                출발지: {{ segment.startName }} → 도착지: {{ segment.endName }}
-              </p>
-              <p>역 개수: {{ segment.stationCount }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="arrival-info">
-          <p>최종 도착지: {{ route.info.lastEndStation }}</p>
+          <!-- RouteBar 추가 -->
+          <RouteBar :route="route" />
+          <button class="detail-button" @click="goToPathDetail(route)">
+            세부 정보 보기
+          </button>
         </div>
       </div>
     </div>
@@ -105,6 +73,9 @@ import axios from 'axios'
 import apiConfig from '@/utils/API/apiConfig'
 
 export default {
+  components: {
+    RouteBar
+  },
   data() {
     return {
       loading: false,
@@ -115,8 +86,7 @@ export default {
       station: null,
       departureName: '현재 출발지',
       stationName: null,
-      requestTime: null,
-      RouteBar
+      requestTime: null
     }
   },
   computed: {
@@ -128,49 +98,14 @@ export default {
     }
   },
   methods: {
-    formatTime(date) {
-      return `${date.getHours().toString().padStart(2, '0')}:${date
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}`
-    },
-    calculateTimeRange(totalTime) {
-      const startTime = new Date()
-      const endTime = new Date(startTime.getTime() + totalTime * 60000)
-      return `${this.formatTime(startTime)} ~ ${this.formatTime(endTime)}`
-    },
-    async searchTransitRoutes() {
-      this.loading = true
-      try {
-        console.log(
-          `[INFO] 출발지 좌표: (${this.departure.x}, ${this.departure.y})`
-        )
-        console.log(
-          `[INFO] 정류장 좌표: (${this.station.x}, ${this.station.y})`
-        )
+    goToPathDetail(route) {
+      // 세션스토리지에 데이터를 저장
+      sessionStorage.setItem('departure', JSON.stringify(this.departure))
+      sessionStorage.setItem('station', JSON.stringify(this.station))
+      sessionStorage.setItem('route', JSON.stringify(route))
 
-        const response = await axios.get(
-          'https://api.odsay.com/v1/api/searchPubTransPathT',
-          {
-            params: {
-              SX: this.departure.x,
-              SY: this.departure.y,
-              EX: this.station.x,
-              EY: this.station.y,
-              apiKey: apiConfig.odsayApiKey
-            }
-          }
-        )
-
-        this.routes = response.data.result?.path || []
-        this.filteredRoutes = [...this.routes]
-        this.sortRoutes()
-        console.log('[INFO] 경로 데이터:', this.routes)
-      } catch (error) {
-        console.error('[ERROR] 경로 검색 중 오류 발생:', error)
-      } finally {
-        this.loading = false
-      }
+      // 다음 페이지로 이동
+      this.$router.push({ name: 'PathDetail' })
     },
     filterByType(type) {
       if (type === 'bus') {
@@ -212,16 +147,38 @@ export default {
     resetFilter() {
       this.filteredRoutes = [...this.routes]
       this.sortRoutes()
+    },
+    async searchTransitRoutes() {
+      this.loading = true
+      try {
+        const response = await axios.get(
+          'https://api.odsay.com/v1/api/searchPubTransPathT',
+          {
+            params: {
+              SX: this.departure.x,
+              SY: this.departure.y,
+              EX: this.station.x,
+              EY: this.station.y,
+              apiKey: apiConfig.odsayApiKey
+            }
+          }
+        )
+        this.routes = response.data.result?.path || []
+        this.filteredRoutes = [...this.routes]
+        this.sortRoutes()
+      } catch (error) {
+        console.error('[ERROR] 경로 검색 중 오류 발생:', error)
+      } finally {
+        this.loading = false
+      }
     }
   },
   async mounted() {
     const query = this.$route.query
-    if (!query || !query.x || !query.y || !query.stationName) {
-      console.error('[ERROR] Query parameters가 누락되었습니다.')
+    if (!query.x || !query.y) {
+      console.error('[ERROR] Query 파라미터가 누락되었습니다.')
       return
     }
-
-    this.stationName = query.stationName
     this.station = {
       x: parseFloat(query.x),
       y: parseFloat(query.y)
@@ -232,12 +189,85 @@ export default {
     }
     this.requestTime = new Date()
 
-    if (!this.departure || !this.station) {
-      console.error('[ERROR] 출발지 또는 도착지 정보가 비어 있습니다.')
-      return
-    }
-
     await this.searchTransitRoutes()
   }
 }
 </script>
+
+<style scoped>
+.result-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.route-summary {
+  margin-bottom: 20px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 15px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.filter-buttons button {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.filter-buttons button:hover {
+  background-color: #ddd;
+}
+
+.sort-dropdown {
+  margin-bottom: 20px;
+}
+
+.loading-spinner {
+  text-align: center;
+  font-size: 18px;
+  color: #888;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.route-item {
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.route-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.segment-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.arrival-info {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+</style>

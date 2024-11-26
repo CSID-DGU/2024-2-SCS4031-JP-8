@@ -28,6 +28,7 @@ import BusDetailLocation from '@/views/real/BusDetailLocation.vue'
 import FinalPage from '@/views/real/test/FinalPage.vue'
 import Debugging from '@/views/real/test/Debugging.vue'
 import PathfindingPage from '@/views/real/PathfindingPage.vue'
+import PathDetail from '@/views/real/PathDetailPage.vue'
 
 const routes = [
   { path: '/', component: MainPage }, // MainPage.vue
@@ -66,6 +67,16 @@ const routes = [
     path: '/pathfinding',
     name: 'PathfindingPage',
     component: PathfindingPage
+  },
+  {
+    path: '/pathfinding',
+    name: 'PathfindingPage',
+    component: PathfindingPage
+  },
+  {
+    path: '/pathdetail',
+    name: 'PathDetail',
+    component: PathDetail
   },
   // {
   //   path: '/',

@@ -1,5 +1,34 @@
 <template>
   <div class="bus-info">
+    <!-- 네이버 지도 -->
+    <div id="map" style="width: 100%; height: 400px; margin-bottom: 20px"></div>
+
+    <!-- 버스 기본 정보 -->
+    <div class="bus-basic-info">
+      <h1>{{ busNo }}번 버스 기본 정보</h1>
+      <p>
+        <strong>출발지:</strong>
+        {{ busBasicInfo?.busStartPoint || '정보 없음' }}
+      </p>
+      <p>
+        <strong>도착지:</strong> {{ busBasicInfo?.busEndPoint || '정보 없음' }}
+      </p>
+      <p>
+        <strong>첫차 시간:</strong>
+        {{ busBasicInfo?.busFirstTime || '정보 없음' }}
+      </p>
+      <p>
+        <strong>막차 시간:</strong>
+        {{ busBasicInfo?.busLastTime || '정보 없음' }}
+      </p>
+      <p>
+        <strong>운행 간격:</strong>
+        평일 {{ busBasicInfo?.bus_Interval_Week || '정보 없음' }}분 / 토요일
+        {{ busBasicInfo?.bus_Interval_Sat || '정보 없음' }}분 / 일요일
+        {{ busBasicInfo?.bus_Interval_Sun || '정보 없음' }}분
+      </p>
+    </div>
+
     <h1>{{ busNo }}번 버스 노선 상세 정보</h1>
 
     <!-- 필터링된 최대 5개의 정류장 표시 -->
@@ -71,7 +100,10 @@ export default {
       arrivalInfo: null,
       routeId: null,
       filePath: '',
-      timeSlot: ''
+      timeSlot: '',
+      busBasicInfo: {}, // 버스 기본 정보 저장
+      map: null, // 네이버 지도 객체
+      polyline: null // 경로 표시를 위한 Polyline 객체
     }
   },
   computed: {
@@ -100,6 +132,20 @@ export default {
       console.log('[INFO] 버스 노선 상세 API 호출 중...')
       const busData = await fetchBusRouteDetails(this.busNo)
       console.log('[INFO] 버스 노선 상세 API 응답:', busData)
+
+      // 버스 기본 정보 저장
+      this.busBasicInfo = {
+        busStartPoint: busData?.busStartPoint,
+        busEndPoint: busData?.busEndPoint,
+        busFirstTime: busData?.busFirstTime,
+        busLastTime: busData?.busLastTime,
+        bus_Interval_Week: busData?.bus_Interval_Week,
+        bus_Interval_Sat: busData?.bus_Interval_Sat,
+        bus_Interval_Sun: busData?.bus_Interval_Sun
+      }
+
+      // 지도 초기화
+      this.initializeMap(busData)
 
       this.routeId = busRouteData[this.busNo]?.routeId
       if (!this.routeId) {
@@ -179,10 +225,79 @@ export default {
     }
   },
   methods: {
+    initializeMap(busData) {
+      // 첫 번째 정류장과 마지막 정류장의 중심 계산
+      const firstStation = busData.station[0]
+      const lastStation = busData.station[busData.station.length - 1]
+
+      // 지도 초기화 옵션 설정
+      const mapOptions = {
+        center: new naver.maps.LatLng(
+          (firstStation.y + lastStation.y) / 2,
+          (firstStation.x + lastStation.x) / 2
+        ),
+        zoom: 10, // 기본 줌 레벨 (전체 보기)
+        zoomControl: true,
+        zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+      }
+
+      // 지도 생성
+      this.map = new naver.maps.Map('map', mapOptions)
+
+      // 경로와 마커 표시
+      this.drawBusRoute(busData.station)
+      this.addMarkers(busData.station)
+    },
+    drawBusRoute(stations) {
+      const path = stations.map(
+        (station) => new naver.maps.LatLng(station.y, station.x)
+      )
+
+      // Polyline을 통해 경로 표시
+      this.polyline = new naver.maps.Polyline({
+        map: this.map,
+        path,
+        strokeWeight: 5,
+        strokeColor: '#007aff',
+        strokeOpacity: 0.8
+      })
+
+      // 지도 범위를 경로에 맞게 조정
+      const bounds = new naver.maps.LatLngBounds()
+      stations.forEach((station) =>
+        bounds.extend(new naver.maps.LatLng(station.y, station.x))
+      )
+      this.map.fitBounds(bounds)
+    },
+    addMarkers(stations) {
+      // 첫 번째 정류장 마커
+      new naver.maps.Marker({
+        position: new naver.maps.LatLng(stations[0].y, stations[0].x),
+        map: this.map,
+        icon: {
+          content:
+            '<div style="background: #007aff; color: #fff; padding: 5px; border-radius: 5px;">출발</div>',
+          anchor: new naver.maps.Point(10, 10)
+        }
+      })
+
+      // 마지막 정류장 마커
+      new naver.maps.Marker({
+        position: new naver.maps.LatLng(
+          stations[stations.length - 1].y,
+          stations[stations.length - 1].x
+        ),
+        map: this.map,
+        icon: {
+          content:
+            '<div style="background: #ff0000; color: #fff; padding: 5px; border-radius: 5px;">도착</div>',
+          anchor: new naver.maps.Point(10, 10)
+        }
+      })
+    },
     getDayType() {
       const now = new Date()
       const day = now.getDay()
-      // 한국어 요일 반환
       if (day === 0) {
         return '일요일'
       } else if (day === 6) {
@@ -192,9 +307,9 @@ export default {
       }
     },
     async setFilePath() {
-      const dayType = this.getDayType() // 올바른 요일명 가져오기
-      const csvFolderPath = `/csv/${this.busNo}/passengers/` // 기본 경로
-      this.filePath = `${csvFolderPath}${this.busNo}_${dayType}.csv` // 올바른 파일 경로 설정
+      const dayType = this.getDayType()
+      const csvFolderPath = `/csv/${this.busNo}/passengers/`
+      this.filePath = `${csvFolderPath}${this.busNo}_${dayType}.csv`
       console.log('[INFO] CSV 파일 경로:', this.filePath)
     },
     calculateProbabilityForStation(idx) {
@@ -206,7 +321,7 @@ export default {
     },
     goToNextPage(station) {
       this.$router.push({
-        name: 'PathfindingPage', // PathfindingPage 라우터 이름
+        name: 'PathfindingPage',
         query: {
           stationName: station.stationName,
           x: station.x,
@@ -242,5 +357,13 @@ export default {
 
 .navigate-button:hover {
   background-color: #45a049;
+}
+
+.bus-basic-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
 }
 </style>

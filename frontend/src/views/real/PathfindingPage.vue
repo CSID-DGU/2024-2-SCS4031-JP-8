@@ -99,12 +99,12 @@ export default {
   },
   methods: {
     goToPathDetail(route) {
-      // 세션스토리지에 데이터를 저장
+      // 세션 스토리지에 출발지, 정류장, 경로 데이터를 저장
       sessionStorage.setItem('departure', JSON.stringify(this.departure))
       sessionStorage.setItem('station', JSON.stringify(this.station))
       sessionStorage.setItem('route', JSON.stringify(route))
 
-      // 다음 페이지로 이동
+      // PathDetail 페이지로 이동
       this.$router.push({ name: 'PathDetail' })
     },
     filterByType(type) {

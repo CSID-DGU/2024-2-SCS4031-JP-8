@@ -1,5 +1,36 @@
 <template>
   <div class="bus-info">
+    <!-- 버스 기본 정보 표시 -->
+    <div class="bus-basic-info">
+      <h1>{{ selectedBusRoute }}번 버스 정보</h1>
+      <p>
+        <strong>출발지:</strong> {{ busBasicInfo.busStartPoint || '정보 없음' }}
+      </p>
+      <p>
+        <strong>도착지:</strong> {{ busBasicInfo.busEndPoint || '정보 없음' }}
+      </p>
+      <p>
+        <strong>첫차 시간:</strong>
+        {{ busBasicInfo.busFirstTime || '정보 없음' }}
+      </p>
+      <p>
+        <strong>막차 시간:</strong>
+        {{ busBasicInfo.busLastTime || '정보 없음' }}
+      </p>
+      <p>
+        <strong>운행 간격 (평일):</strong>
+        {{ busBasicInfo.bus_Interval_Week || '정보 없음' }}분
+      </p>
+      <p>
+        <strong>운행 간격 (토요일):</strong>
+        {{ busBasicInfo.bus_Interval_Sat || '정보 없음' }}분
+      </p>
+      <p>
+        <strong>운행 간격 (일요일):</strong>
+        {{ busBasicInfo.bus_Interval_Sun || '정보 없음' }}분
+      </p>
+    </div>
+
     <h1>
       {{ selectedBusRoute }}번 버스 도착 정보 ({{
         selectedDirection === 'up' ? '상행' : '하행'

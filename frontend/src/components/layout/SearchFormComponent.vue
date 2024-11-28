@@ -130,7 +130,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import './SearchFormStyle.css'
+//import './SearchFormStyle.css'
 
 const store = useStore()
 const router = useRouter()
@@ -269,4 +269,178 @@ const goToSearchDeparture = () => router.push({ path: '/search-departure' })
 const goToSearchDestination = () => router.push({ path: '/search-destination' })
 </script>
 
-<style scoped></style>
+<style scoped>
+.search-form {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 16px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.input-group:last-child {
+  margin-bottom: 0;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  padding-left: 40px;
+  border: 1px solid #e8e9ea;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #333;
+  background: #f5f6f7;
+}
+
+.input-group input::placeholder {
+  color: #999;
+}
+
+.input-group label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ff4d15;
+}
+
+.clear-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.switch-button-container {
+  margin-top: 12px;
+}
+
+.switch-button {
+  width: 100%;
+  padding: 12px;
+  background: #f5f6f7;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.realtime-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff4d15;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 360px;
+}
+
+.modal-content h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.modal-button.primary {
+  background: #ff4d15;
+  color: white;
+}
+
+.modal-button.secondary {
+  background: #f5f6f7;
+  color: #666;
+}
+
+/* Time picker styles */
+.time-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.time-option {
+  padding: 8px 16px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.time-option.selected {
+  background: #ffe5dd;
+  color: #ff4d15;
+  border-radius: 4px;
+}
+
+.meridiem-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.meridiem-picker button {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #e8e9ea;
+  border-radius: 6px;
+  background: white;
+  color: #666;
+}
+
+.meridiem-picker button.selected {
+  background: #ffe5dd;
+  color: #ff4d15;
+  border-color: #ff4d15;
+}
+</style>

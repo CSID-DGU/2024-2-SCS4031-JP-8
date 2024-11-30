@@ -8,7 +8,7 @@
           style="margin-right: -170px"
         />
 
-        <h1></h1>
+        <h1>만차 버스 길찾기</h1>
         <SlidingMenu />
       </header>
       <SearchFormComponent />
@@ -107,7 +107,7 @@ export default {
       }
 
       this.$router.push({
-        path: '/bus-search',
+        path: '/result',
         query: {
           startX,
           startY,

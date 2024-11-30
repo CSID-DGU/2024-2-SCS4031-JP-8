@@ -29,6 +29,7 @@ import FinalPage from '@/views/real/test/FinalPage.vue'
 import Debugging from '@/views/real/test/Debugging.vue'
 import PathfindingPage from '@/views/real/PathfindingPage.vue'
 import PathDetail from '@/views/real/PathDetailPage.vue'
+import ResultPage from '@/views/real/test/ResultPage.vue'
 
 const routes = [
   { path: '/', component: MainPage }, // MainPage.vue
@@ -77,6 +78,11 @@ const routes = [
     path: '/pathdetail',
     name: 'PathDetail',
     component: PathDetail
+  },
+  {
+    path: '/result',
+    name: 'ResultPage',
+    component: ResultPage
   },
   // {
   //   path: '/',

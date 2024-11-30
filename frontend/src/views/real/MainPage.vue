@@ -107,7 +107,7 @@ export default {
       }
 
       this.$router.push({
-        path: '/bus-search',
+        path: '/result',
         query: {
           startX,
           startY,
@@ -182,93 +182,100 @@ export default {
 </script>
 
 <style scoped>
-* {
-  font-family: 'Pretendard', sans-serif;
-}
-
 .background {
-  background-color: #eaeaea;
-  position: fixed;
-  top: 0;
-  left: 0;
+  background-color: #ffffff;
+  min-height: 100vh;
   width: 100%;
-  height: 100%;
-  z-index: -1;
 }
 
 .mobile-container {
   width: 100%;
   max-width: 425px;
   margin: 0 auto;
-  padding: 25px;
+  padding: 0;
   background-color: white;
   height: 100vh;
   overflow-y: auto;
+  position: relative;
 }
 
 .header {
-  text-align: center;
-  margin-bottom: 30px;
+  background-color: #ff4d15;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
 }
 
-h1 {
-  font-size: 17px;
-  font-weight: bold;
-  color: #333;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+.header h1 {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.header img {
+  height: 28px;
+  margin-right: 0 !important;
 }
 
 .search-button {
-  width: 100%;
-  padding: 14px;
-  background-color: #e5c7c7;
-  color: #625858;
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 393px;
+  padding: 16px;
+  background-color: #ff4d15;
+  color: white !important;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
   border: none;
-  cursor: pointer;
   border-radius: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
-}
-
-.search-button:hover:not(:disabled) {
-  background-color: #d8b4b4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.search-button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(255, 77, 21, 0.2);
+  z-index: 100;
 }
 
 .search-button:disabled {
-  background-color: #ccc;
-  color: #999;
-  cursor: not-allowed;
-  box-shadow: none;
+  background-color: #ffe5dd;
+  color: rgba(255, 77, 21, 0.5) !important;
 }
 
 .location-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  background-color: #f0f0f0;
-  color: #444;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 393px;
+  padding: 14px;
+  background-color: #f5f6f7;
+  color: #666666;
   font-size: 14px;
+  font-weight: 500;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
+  z-index: 100;
 }
 
 .map-container {
   width: 100%;
-  height: 300px;
-  margin-top: 20px;
-  border-radius: 8px;
-  overflow: hidden;
+  height: calc(100vh - 60px);
+  margin: 0;
+  border-radius: 0;
+}
+
+/* Hide the landing image as it's not present in the design */
+.landing-image {
+  display: none;
+}
+
+/* Ensure the map takes up the full height */
+.map-container div {
+  height: 100% !important;
 }
 </style>

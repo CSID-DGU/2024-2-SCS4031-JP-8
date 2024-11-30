@@ -1,10 +1,14 @@
 <template>
   <div class="bus-info">
+    <div class="header">
+      {{ busNo }}번 노선<br />
+      정류장 추천 결과
+    </div>
     <!-- 네이버 지도 -->
     <div id="map" style="width: 100%; height: 400px; margin-bottom: 20px"></div>
 
     <!-- 버스 기본 정보 -->
-    <div class="bus-basic-info">
+    <!-- <div class="bus-basic-info">
       <h1>{{ busNo }}번 버스 기본 정보</h1>
       <p>
         <strong>출발지:</strong>
@@ -27,7 +31,7 @@
         {{ busBasicInfo?.bus_Interval_Sat || '정보 없음' }}분 / 일요일
         {{ busBasicInfo?.bus_Interval_Sun || '정보 없음' }}분
       </p>
-    </div>
+    </div> -->
 
     <h1>{{ busNo }}번 버스 노선 상세 정보</h1>
 
@@ -50,16 +54,16 @@
     </div>
 
     <!-- 포아송 확률 계산 결과 표시 -->
-    <div v-if="selectedStations.length" class="results">
+    <!-- <div v-if="selectedStations.length" class="results">
       <h3>탑승 확률이 높은 정류장</h3>
       <div v-for="result in selectedStations" :key="result.seq" class="result">
         <p>정류장 순번: {{ result.seq }}</p>
         <p>정류장명: {{ result.stationName }}</p>
       </div>
-    </div>
+    </div> -->
 
     <!-- 모든 정류장의 확률 표시 -->
-    <div v-if="filteredStations.length" class="all-stations">
+    <!-- <div v-if="filteredStations.length" class="all-stations">
       <h3>모든 정류장의 탑승 확률</h3>
       <div
         v-for="station in filteredStations"
@@ -73,13 +77,13 @@
           {{ calculateProbabilityForStation(station.idx).toFixed(2) }}%
         </p>
       </div>
-    </div>
+    </div> -->
 
     <!-- 확률 계산 실패 시 -->
-    <div v-else>
+    <!-- <div v-if="selectedStations.length" class="results">
       <h3>탑승 확률을 계산할 수 없습니다.</h3>
       <p>CSV 파일 로드 또는 데이터 처리 중 오류가 발생했습니다.</p>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -335,35 +339,124 @@ export default {
 </script>
 
 <style scoped>
-.bus-info {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+.header {
+  background: linear-gradient(90deg, #ff4d15 0%, #ff6b3f 100%);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
 }
-.station {
-  margin-bottom: 10px;
-  border-bottom: 1px solid #ccc;
+
+.bus-info {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui,
+    Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
+    'Malgun Gothic', sans-serif;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  padding-top: 0;
+}
+
+h1 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #007aff;
   padding-bottom: 10px;
 }
 
+h3 {
+  color: #007aff;
+  font-size: 18px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.bus-basic-info {
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.bus-basic-info p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.bus-basic-info strong {
+  color: #007aff;
+  font-weight: 600;
+}
+
+.station {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.station:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .navigate-button {
-  margin-top: 10px;
-  padding: 5px 10px;
-  background-color: #4caf50;
+  margin-top: 15px;
+  padding: 10px 15px;
+  background-color: #ff4d15;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 600;
 }
 
 .navigate-button:hover {
-  background-color: #45a049;
+  background-color: #ff6b3f;
 }
 
-.bus-basic-info {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #f9f9f9;
+.results,
+.all-stations {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.result,
+.station-probability {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.result:last-child,
+.station-probability:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 600px) {
+  .bus-info {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .bus-basic-info,
+  .station,
+  .results,
+  .all-stations {
+    padding: 15px;
+  }
 }
 </style>

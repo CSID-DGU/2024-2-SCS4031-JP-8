@@ -93,7 +93,9 @@
           <h3 class="section-title">경로 <br />세부 단계</h3>
           <div class="timeline">
             <div
-              v-for="(segment, index) in route.subPath"
+              v-for="(segment, index) in route.subPath.filter(
+                (s) => s.trafficType !== 3
+              )"
               :key="index"
               class="timeline-segment"
             >
@@ -115,14 +117,13 @@
                   <div class="segment-details">
                     {{ getSegmentDetails(segment) }}
                   </div>
-                  <div v-if="segment.trafficType === 3" class="walking-info">
-                    <WalkIcon size="16" class="walk-icon" />
-                    <span>도보 {{ formatDistance(segment.distance) }}</span>
-                  </div>
                 </div>
               </div>
               <div
-                v-if="index < route.subPath.length - 1"
+                v-if="
+                  index <
+                  route.subPath.filter((s) => s.trafficType !== 3).length - 1
+                "
                 class="timeline-line"
                 :class="getLineClass(segment)"
               ></div>
@@ -313,14 +314,12 @@ const formatTime = (minutes) => {
 const getMarkerClass = (segment) => {
   if (segment.trafficType === 1) return 'marker-subway'
   if (segment.trafficType === 2) return 'marker-bus'
-  if (segment.trafficType === 3) return 'marker-walk'
   return ''
 }
 
 const getSegmentIcon = (segment) => {
   if (segment.trafficType === 1) return SubwayIcon
   if (segment.trafficType === 2) return BusIcon
-  if (segment.trafficType === 3) return WalkIcon
   return null
 }
 
@@ -333,14 +332,12 @@ const getSegmentDetails = (segment) => {
     return `${segment.lane[0].name} (${segment.startName} → ${segment.endName})`
   if (segment.trafficType === 2)
     return `${segment.lane[0].busNo} (${segment.startName} → ${segment.endName})`
-  if (segment.trafficType === 3) return '도보 이동'
   return ''
 }
 
 const getLineClass = (segment) => {
   if (segment.trafficType === 1) return 'line-subway'
   if (segment.trafficType === 2) return 'line-bus'
-  if (segment.trafficType === 3) return 'line-walk'
   return ''
 }
 
@@ -673,10 +670,6 @@ onMounted(async () => {
   background-color: #10b981;
 }
 
-.marker-walk {
-  background-color: #f59e0b;
-}
-
 .marker-icon {
   color: #ffffff;
 }
@@ -704,17 +697,6 @@ onMounted(async () => {
   margin-bottom: 4px;
 }
 
-.walking-info {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.walk-icon {
-  margin-right: 4px;
-}
-
 .timeline-line {
   position: absolute;
   left: -19px;
@@ -729,10 +711,6 @@ onMounted(async () => {
 
 .line-bus {
   background-color: #10b981;
-}
-
-.line-walk {
-  background-color: #f59e0b;
 }
 
 @media (max-width: 390px) {

@@ -129,7 +129,7 @@ const initializeMap = () => {
   const mapOptions = {
     center: centerPoint,
     zoom: 10,
-    zoomControl: true,
+    zoomControl: false,
     zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
   }
   const map = new naver.maps.Map('map', mapOptions)

@@ -1,13 +1,16 @@
 <template>
   <div class="result-page">
+    <header class="app-header">
+      <button class="back-button" @click="goBack">
+        <ArrowLeftIcon size="24" class="back-icon" />
+      </button>
+      <h1>경로 및 정류장 추천</h1>
+    </header>
+
     <div class="location-info">
       <div class="location from">
         <div class="location-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-            />
-          </svg>
+          <MapPinIcon size="24" class="icon" />
         </div>
         <div>
           <span class="location-label">출발</span>
@@ -16,11 +19,7 @@
       </div>
       <div class="location to">
         <div class="location-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path
-              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
-            />
-          </svg>
+          <FlagIcon size="24" class="icon" />
         </div>
         <div>
           <span class="location-label">도착</span>
@@ -49,6 +48,10 @@
 
     <div v-if="loading" class="loading-spinner">로딩 중...</div>
 
+    <div v-else-if="filteredRoutes.length === 0" class="no-routes">
+      <p>검색 결과가 없습니다.</p>
+    </div>
+
     <div v-else class="route-list">
       <div
         v-for="(route, index) in filteredRoutes"
@@ -56,191 +59,238 @@
         class="route-item"
       >
         <div class="route-header">
-          <h3>총 소요 시간: {{ route.info.totalTime }}분</h3>
-          <p>총 요금: {{ route.info.payment }}원</p>
-          <p>도보 거리: {{ route.info.totalWalk }}미터</p>
-          <p>
-            환승 횟수: 버스 {{ route.info.busTransitCount }}회, 지하철
-            {{ route.info.subwayTransitCount }}회
-          </p>
-          <RouteBar :route="route" />
-          <button class="detail-button" @click="goToPathDetail(route)">
-            세부 정보 보기
-          </button>
+          <div class="route-summary">
+            <h3 class="total-time">{{ route.info.totalTime }}분</h3>
+            <p class="arrival-time">
+              {{ formatDepartureArrivalTime(route.info.totalTime) }}
+            </p>
+          </div>
+          <div class="route-details">
+            <div class="detail-item">
+              <WalkIcon class="icon" />
+              <span class="value">{{
+                formatDistance(route.info.totalWalk)
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <WalletIcon class="icon" />
+              <span class="value">{{ route.info.payment }}원</span>
+            </div>
+            <div class="detail-item">
+              <ArrowLeftRightIcon class="icon" />
+              <span class="value"
+                >{{
+                  route.info.busTransitCount + route.info.subwayTransitCount
+                }}회</span
+              >
+            </div>
+          </div>
         </div>
+        <RouteBar :route="route" />
+        <button class="detail-button" @click="goToPathDetail(route)">
+          세부 경로 안내
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import RouteBar from './RouteBar.vue'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useStore } from 'vuex'
 import axios from 'axios'
+import RouteBar from './RouteBar.vue'
 import apiConfig from '@/utils/API/apiConfig'
+import {
+  WalkIcon,
+  WalletIcon,
+  ArrowLeftRightIcon,
+  MapPinIcon,
+  FlagIcon,
+  ArrowLeftIcon
+} from 'lucide-vue-next'
 
-export default {
-  components: {
-    RouteBar
-  },
-  data() {
-    return {
-      loading: false,
-      routes: [],
-      filteredRoutes: [],
-      sortCriteria: 'totalTime',
-      departure: null,
-      station: null,
-      departureName: '현재 출발지',
-      stationName: null,
-      requestTime: null
+const router = useRouter()
+const route = useRoute()
+const store = useStore()
+
+const loading = ref(false)
+const routes = ref([])
+const filteredRoutes = ref([])
+const sortCriteria = ref('totalTime')
+const departure = ref(null)
+const station = ref(null)
+const departureName = ref('현재 출발지')
+const stationName = ref(null)
+const requestTime = ref(null)
+
+const formattedRequestTime = computed(() => {
+  if (!requestTime.value) return '정보 없음'
+  const hours = requestTime.value.getHours().toString().padStart(2, '0')
+  const minutes = requestTime.value.getMinutes().toString().padStart(2, '0')
+  return `${hours}:${minutes}`
+})
+
+const goBack = () => {
+  router.go(-1)
+}
+
+const goToPathDetail = (route) => {
+  console.log('[DEBUG] Navigating to PathDetail with route:', route)
+  sessionStorage.setItem('departure', JSON.stringify(departure.value))
+  sessionStorage.setItem('station', JSON.stringify(station.value))
+  sessionStorage.setItem('route', JSON.stringify(route))
+
+  router.push({
+    name: 'PathDetail',
+    query: {
+      departureX: departure.value.x,
+      departureY: departure.value.y,
+      stationX: station.value.x,
+      stationY: station.value.y
     }
-  },
-  computed: {
-    formattedRequestTime() {
-      if (!this.requestTime) return '정보 없음'
-      const hours = this.requestTime.getHours().toString().padStart(2, '0')
-      const minutes = this.requestTime.getMinutes().toString().padStart(2, '0')
-      return `${hours}:${minutes}`
+  })
+}
+
+const filterByType = (type) => {
+  console.log('[DEBUG] Filtering by type:', type)
+  if (type === 'bus') {
+    filteredRoutes.value = routes.value.filter(
+      (route) =>
+        route.info.busTransitCount > 0 && route.info.subwayTransitCount === 0
+    )
+  } else if (type === 'subway') {
+    filteredRoutes.value = routes.value.filter(
+      (route) =>
+        route.info.busTransitCount === 0 && route.info.subwayTransitCount > 0
+    )
+  } else if (type === 'busSubway') {
+    filteredRoutes.value = routes.value.filter(
+      (route) =>
+        route.info.busTransitCount > 0 && route.info.subwayTransitCount > 0
+    )
+  } else {
+    filteredRoutes.value = [...routes.value]
+  }
+  sortRoutes()
+}
+
+const sortRoutes = () => {
+  console.log('[DEBUG] Sorting routes by:', sortCriteria.value)
+  if (sortCriteria.value === 'totalTime') {
+    filteredRoutes.value.sort((a, b) => a.info.totalTime - b.info.totalTime)
+  } else if (sortCriteria.value === 'transitCount') {
+    filteredRoutes.value.sort(
+      (a, b) =>
+        a.info.busTransitCount +
+        a.info.subwayTransitCount -
+        (b.info.busTransitCount + b.info.subwayTransitCount)
+    )
+  } else if (sortCriteria.value === 'totalWalk') {
+    filteredRoutes.value.sort((a, b) => a.info.totalWalk - b.info.totalWalk)
+  }
+  console.log('[DEBUG] Sorted Routes:', filteredRoutes.value)
+}
+
+const searchTransitRoutes = async () => {
+  loading.value = true
+  try {
+    const params = {
+      SX: departure.value.coordinates.x,
+      SY: departure.value.coordinates.y,
+      EX: station.value.x,
+      EY: station.value.y,
+      apiKey: apiConfig.odsayApiKey
     }
-  },
-  methods: {
-    goToPathDetail(route) {
-      console.log('[DEBUG] Navigating to PathDetail with route:', route)
-      sessionStorage.setItem('departure', JSON.stringify(this.departure))
-      sessionStorage.setItem('station', JSON.stringify(this.station))
-      sessionStorage.setItem('route', JSON.stringify(route))
 
-      this.$router.push({
-        name: 'PathDetail',
-        query: {
-          departureX: this.departure.x,
-          departureY: this.departure.y,
-          stationX: this.station.x,
-          stationY: this.station.y
+    console.log('[DEBUG] API 호출 파라미터:', params)
+
+    const response = await axios.get(
+      'https://api.odsay.com/v1/api/searchPubTransPathT',
+      { params }
+    )
+
+    console.log('[DEBUG] ODsay API Response:', response.data)
+
+    routes.value = response.data.result?.path || []
+
+    if (routes.value.length > 0) {
+      const firstRoute = routes.value[0].info
+      if (!station.value.x || !station.value.y) {
+        station.value = {
+          x: firstRoute.startX,
+          y: firstRoute.startY
         }
-      })
-    },
-    filterByType(type) {
-      console.log('[DEBUG] Filtering by type:', type)
-      if (type === 'bus') {
-        this.filteredRoutes = this.routes.filter(
-          (route) =>
-            route.info.busTransitCount > 0 &&
-            route.info.subwayTransitCount === 0
-        )
-      } else if (type === 'subway') {
-        this.filteredRoutes = this.routes.filter(
-          (route) =>
-            route.info.busTransitCount === 0 &&
-            route.info.subwayTransitCount > 0
-        )
-      } else if (type === 'busSubway') {
-        this.filteredRoutes = this.routes.filter(
-          (route) =>
-            route.info.busTransitCount > 0 && route.info.subwayTransitCount > 0
-        )
-      } else {
-        this.filteredRoutes = [...this.routes]
-      }
-      this.sortRoutes()
-    },
-    sortRoutes() {
-      console.log('[DEBUG] Sorting routes by:', this.sortCriteria)
-      if (this.sortCriteria === 'totalTime') {
-        this.filteredRoutes.sort((a, b) => a.info.totalTime - b.info.totalTime)
-      } else if (this.sortCriteria === 'transitCount') {
-        this.filteredRoutes.sort(
-          (a, b) =>
-            a.info.busTransitCount +
-            a.info.subwayTransitCount -
-            (b.info.busTransitCount + b.info.subwayTransitCount)
-        )
-      } else if (this.sortCriteria === 'totalWalk') {
-        this.filteredRoutes.sort((a, b) => a.info.totalWalk - b.info.totalWalk)
-      }
-      console.log('[DEBUG] Sorted Routes:', this.filteredRoutes)
-    },
-    resetFilter() {
-      console.log('[DEBUG] Resetting filters')
-      this.filteredRoutes = [...this.routes]
-      this.sortRoutes()
-    },
-    async searchTransitRoutes() {
-      this.loading = true
-      try {
-        const params = {
-          SX: this.departure.coordinates.x,
-          SY: this.departure.coordinates.y,
-          EX: this.station.x,
-          EY: this.station.y,
-          apiKey: apiConfig.odsayApiKey
-        }
-
-        console.log('[DEBUG] API 호출 파라미터:', params)
-
-        const response = await axios.get(
-          'https://api.odsay.com/v1/api/searchPubTransPathT',
-          { params }
-        )
-
-        console.log('[DEBUG] ODsay API Response:', response.data)
-
-        this.routes = response.data.result?.path || []
-
-        if (this.routes.length > 0) {
-          const firstRoute = this.routes[0].info
-          if (!this.station.x || !this.station.y) {
-            this.station = {
-              x: firstRoute.startX,
-              y: firstRoute.startY
-            }
-          }
-        }
-
-        this.filteredRoutes = [...this.routes]
-        this.sortRoutes()
-      } catch (error) {
-        console.error(
-          '[ERROR] ODsay API 호출 오류:',
-          error.response?.data || error.message
-        )
-      } finally {
-        this.loading = false
       }
     }
-  },
-  async mounted() {
-    const query = this.$route.query
 
-    console.log('[DEBUG] Received Query:', query)
-
-    if (!query.x || !query.y || query.x === '' || query.y === '') {
-      console.error('[ERROR] Query 파라미터가 누락되었습니다:', query)
-      return
-    }
-
-    this.station = {
-      x: parseFloat(query.x),
-      y: parseFloat(query.y),
-      name: query.name || '알 수 없음'
-    }
-
-    this.departure = this.$store.getters['departure/getDeparture']
-    console.log('[DEBUG] Vuex Departure Data:', this.departure)
-    if (!this.departure || !this.departure.coordinates) {
-      console.error('[ERROR] Vuex에서 출발지 정보가 없습니다.')
-      return
-    }
-
-    this.departureName = this.departure.name || '현재 출발지'
-    this.stationName = this.station.name
-    this.requestTime = new Date()
-
-    console.log('[DEBUG] Starting search with:', this.departure, this.station)
-
-    await this.searchTransitRoutes()
+    filteredRoutes.value = [...routes.value]
+    sortRoutes()
+  } catch (error) {
+    console.error(
+      '[ERROR] ODsay API 호출 오류:',
+      error.response?.data || error.message
+    )
+  } finally {
+    loading.value = false
   }
 }
+
+const formatDepartureArrivalTime = (totalMinutes) => {
+  const departureTime = new Date(requestTime.value)
+  const arrivalTime = new Date(departureTime.getTime() + totalMinutes * 60000)
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+  }
+
+  return `${formatTime(departureTime)} ~ ${formatTime(arrivalTime)}`
+}
+
+const formatDistance = (meters) => {
+  if (meters < 1000) {
+    return `${meters}m`
+  } else {
+    return `${(meters / 1000).toFixed(1)}km`
+  }
+}
+
+onMounted(async () => {
+  const query = route.query
+
+  console.log('[DEBUG] Received Query:', query)
+
+  if (!query.x || !query.y || query.x === '' || query.y === '') {
+    console.error('[ERROR] Query 파라미터가 누락되었습니다:', query)
+    return
+  }
+
+  station.value = {
+    x: parseFloat(query.x),
+    y: parseFloat(query.y),
+    name: query.name || '알 수 없음'
+  }
+
+  departure.value = store.getters['departure/getDeparture']
+  console.log('[DEBUG] Vuex Departure Data:', departure.value)
+  if (!departure.value || !departure.value.coordinates) {
+    console.error('[ERROR] Vuex에서 출발지 정보가 없습니다.')
+    return
+  }
+
+  departureName.value = departure.value.name || '현재 출발지'
+  stationName.value = station.value.name
+  requestTime.value = new Date()
+
+  console.log('[DEBUG] Starting search with:', departure.value, station.value)
+
+  await searchTransitRoutes()
+})
 </script>
 
 <style scoped>
@@ -253,6 +303,34 @@ export default {
   font-family: 'Pretendard', sans-serif;
   background-color: #ffffff;
   padding: 24px 20px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  margin-right: 16px;
+}
+
+.back-icon {
+  color: #1e293b;
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
 }
 
 .location-info {
@@ -283,10 +361,8 @@ export default {
   margin-right: 16px;
 }
 
-.location-icon svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
+.location-icon .icon {
+  color: white;
 }
 
 .location-name {
@@ -390,7 +466,7 @@ export default {
   border: 1px solid #e2e8f0;
   padding: 16px;
   border-radius: 12px;
-  background-color: #f8fafc;
+  background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
@@ -401,26 +477,58 @@ export default {
 }
 
 .route-header {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
-.route-header h3 {
-  font-size: 1.125rem;
-  margin-bottom: 8px;
+.route-summary {
+  flex: 1;
 }
 
-.route-header p {
+.total-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.arrival-time {
   font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 4px;
+  color: #4a5568;
+  margin: 4px 0 0;
+}
+
+.route-details {
+  display: flex;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: #4a5568;
+}
+
+.value {
+  font-size: 0.75rem;
+  color: #4a5568;
+  white-space: nowrap;
 }
 
 .detail-button {
+  width: 100%;
   margin-top: 12px;
   padding: 8px 16px;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
   background-color: #3b82f6;
   color: #ffffff;
   border: none;
@@ -443,12 +551,30 @@ export default {
     padding: 10px;
   }
 
-  .route-header h3 {
-    font-size: 1rem;
+  .route-item {
+    padding: 12px;
   }
 
-  .route-header p {
-    font-size: 0.8125rem;
+  .total-time {
+    font-size: 1.25rem;
+  }
+
+  .arrival-time {
+    font-size: 0.75rem;
+  }
+
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .value {
+    font-size: 0.6875rem;
+  }
+
+  .detail-button {
+    font-size: 0.875rem;
+    padding: 6px 12px;
   }
 }
 </style>

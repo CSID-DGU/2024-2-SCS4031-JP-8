@@ -70,11 +70,6 @@ const routes = [
     component: PathfindingPage
   },
   {
-    path: '/pathfinding',
-    name: 'PathfindingPage',
-    component: PathfindingPage
-  },
-  {
     path: '/pathdetail',
     name: 'PathDetail',
     component: PathDetail

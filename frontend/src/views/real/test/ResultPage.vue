@@ -87,6 +87,7 @@
               first: index === 0,
               last: index === filteredStations.length - 1
             }"
+            @click="selectStation(station)"
           >
             <div class="timeline-connector">
               <div class="timeline-node"></div>
@@ -169,10 +170,10 @@ export default {
         const routeOptions = ['5000', '5000A', '5000B', '1112', '6001']
         const allRoutes = []
 
-        for (const route of paths) {
-          for (const segment of route.subPath) {
+        paths.forEach((route) => {
+          route.subPath.forEach((segment) => {
             if (segment.trafficType === 2) {
-              for (const lane of segment.lane) {
+              segment.lane.forEach((lane) => {
                 if (routeOptions.includes(lane.busNo)) {
                   allRoutes.push({
                     busNo: lane.busNo,
@@ -182,10 +183,10 @@ export default {
                     stationName: segment.startName
                   })
                 }
-              }
+              })
             }
-          }
-        }
+          })
+        })
 
         filteredRoutes.value = allRoutes.reduce((acc, current) => {
           const duplicate = acc.find(
@@ -306,6 +307,17 @@ export default {
       })
     }
 
+    const selectStation = (station) => {
+      router.push({
+        path: '/pathfinding',
+        query: {
+          x: station.x,
+          y: station.y,
+          name: station.stationName
+        }
+      })
+    }
+
     const getDayType = () => {
       const now = new Date()
       const day = now.getDay()
@@ -343,7 +355,8 @@ export default {
       selectBusRoute,
       calculateProbabilityForStation,
       goBack,
-      isHighestProbability
+      isHighestProbability,
+      selectStation
     }
   }
 }

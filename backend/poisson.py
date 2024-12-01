@@ -4,6 +4,7 @@ from datetime import datetime
 
 # 승차인원 데이터 불러오기
 passenger_data = pd.read_csv('5000B_week_pass.csv', index_col='정류장')
+# passenger_data = pd.read_csv('1112_week_pass.csv', index_col='정류장')
 
 def poisson_prob(k, sigma, lam):
     return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(k, int(sigma)))
@@ -14,9 +15,9 @@ def get_bus_location(route_id):
 def calculate_boarding_probability(route_id, target_station, current_time, passenger_data):
     current_bus = get_bus_location(route_id)
     
-    remain_seat = 42
-    time_slot = 19
-    search_time = 38 #current_time.minute
+    remain_seat = 42    
+    time_slot = 7
+    search_time = 42    #current_time.minute
     
     station_list = passenger_data.index.tolist()
     relevant_stations = station_list[current_bus:target_station+1]
@@ -62,8 +63,9 @@ def calculate_boarding_probability(route_id, target_station, current_time, passe
     return probabilities
 
 # 예시 실행
-route_id = "5000B"
-target_station = 44
+route_id = "1112"
+target_station = 44 # 5000B
+# target_station = 13
 current_time = datetime.now()
 
 result = calculate_boarding_probability(route_id, target_station, current_time, passenger_data)

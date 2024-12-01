@@ -677,19 +677,19 @@ header h1 {
 }
 
 .place-item button.map-button {
-  background: #10b981;
+  background: #3b82f6;
 }
 
 .place-item button.map-button:hover {
-  background: #059669;
+  background: #2563eb;
 }
 
 .place-item button.favorite-button {
-  background: #f59e0b;
+  background: #60a5fa;
 }
 
 .place-item button.favorite-button:hover {
-  background: #d97706;
+  background: #3b82f6;
 }
 
 .no-results {

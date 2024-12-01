@@ -1,7 +1,6 @@
 <template>
   <div class="result-page">
-    <!-- 헤더 -->
-    <header class="app-header">
+    <div class="app-header">
       <button class="back-button" @click="goBack">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -14,11 +13,12 @@
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="M19 12H5M12 19l-7-7 7-7" />
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
       <h1>경로 및 정류장 추천</h1>
-    </header>
+    </div>
 
     <div class="content">
       <div class="location-info">
@@ -76,6 +76,9 @@
         <h2 class="section-title">
           {{ selectedRoute.busNo }}번 노선 정류장 추천
         </h2>
+        <button @click="checkBusLocation" class="check-route-button">
+          노선 정보 확인
+        </button>
         <div id="map"></div>
         <div class="sort-options">
           <button
@@ -151,11 +154,111 @@
               <p class="station-description">
                 {{ station.stationName }} 정류장
               </p>
+              <div class="bus-arrival-info" v-if="station.arrivalInfo">
+                <div class="bus-info">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-clock"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span
+                    >첫 번째 버스: {{ station.arrivalInfo.predictTime1 }}분
+                    후</span
+                  >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-users"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span>여석: {{ station.arrivalInfo.remainSeatCnt1 }}</span>
+                </div>
+                <div class="bus-info">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-clock"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span
+                    >두 번째 버스: {{ station.arrivalInfo.predictTime2 }}분
+                    후</span
+                  >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-users"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span>여석: {{ station.arrivalInfo.remainSeatCnt2 }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <button @click="refreshBusInfo" class="refresh-button">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="feather feather-refresh-cw"
+      >
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path
+          d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+        ></path>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -284,8 +387,27 @@ export default {
             stations: busData.station
           })
         }
+
+        await fetchBusArrivalForStations()
       } catch (error) {
         console.error('노선 선택 오류:', error)
+      }
+    }
+
+    const fetchBusArrivalForStations = async () => {
+      for (const station of filteredStations.value) {
+        try {
+          const arrivalInfo = await fetchBusArrivalInfo(
+            station.stationId,
+            selectedRoute.value.busNo
+          )
+          station.arrivalInfo = arrivalInfo
+        } catch (error) {
+          console.error(
+            `정류장 ${station.stationName}의 도착 정보 조회 오류:`,
+            error
+          )
+        }
       }
     }
 
@@ -305,13 +427,21 @@ export default {
           (firstStation.x + lastStation.x) / 2
         ),
         zoom: 15,
-        zoomControl: false,
+        zoomControl: true,
         zoomControlOptions: {
+          style: naver.maps.ZoomControlStyle.SMALL,
           position: naver.maps.Position.TOP_RIGHT
         }
       }
 
       map.value = new naver.maps.Map('map', mapOptions)
+
+      // Custom zoom control styles
+      const customControl = new naver.maps.CustomControl(createZoomControl(), {
+        position: naver.maps.Position.TOP_RIGHT
+      })
+
+      customControl.setMap(map.value)
 
       const path = []
       filteredStations.value.forEach((station) => {
@@ -352,6 +482,30 @@ export default {
         map.value.setZoom(17)
         naver.maps.Event.removeListener(listener)
       })
+    }
+
+    const createZoomControl = () => {
+      const zoomControl = document.createElement('div')
+      zoomControl.className = 'custom-zoom-control'
+
+      const zoomIn = document.createElement('button')
+      zoomIn.innerHTML = '+'
+      zoomIn.className = 'zoom-button zoom-in'
+      zoomIn.addEventListener('click', () =>
+        map.value.setZoom(map.value.getZoom() + 1)
+      )
+
+      const zoomOut = document.createElement('button')
+      zoomOut.innerHTML = '-'
+      zoomOut.className = 'zoom-button zoom-out'
+      zoomOut.addEventListener('click', () =>
+        map.value.setZoom(map.value.getZoom() - 1)
+      )
+
+      zoomControl.appendChild(zoomIn)
+      zoomControl.appendChild(zoomOut)
+
+      return zoomControl
     }
 
     const selectStation = (station) => {
@@ -416,6 +570,19 @@ export default {
       })
     })
 
+    const refreshBusInfo = async () => {
+      await fetchBusArrivalForStations()
+    }
+
+    const checkBusLocation = () => {
+      if (selectedRoute.value) {
+        router.push({
+          path: '/buslocation',
+          query: { busNo: selectedRoute.value.busNo }
+        })
+      }
+    }
+
     onMounted(() => {
       searchTransitRoutes()
     })
@@ -432,7 +599,9 @@ export default {
       isHighProbability,
       selectStation,
       currentSort,
-      sortBy
+      sortBy,
+      refreshBusInfo,
+      checkBusLocation
     }
   }
 }
@@ -453,23 +622,25 @@ export default {
   display: flex;
   align-items: center;
   background-color: #ffffff;
-  padding: 16px;
+  padding: 20px 16px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .back-button {
-  background: white;
+  background: transparent;
   border: none;
   padding: 8px;
   cursor: pointer;
-  border-radius: 50%;
   margin-right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .back-button svg {
   width: 24px;
   height: 24px;
-  fill: #000000;
+  stroke: #000000;
 }
 
 .app-header h1 {
@@ -594,6 +765,7 @@ export default {
   overflow: hidden;
   margin-bottom: 24px;
   height: 200px;
+  position: relative;
 }
 
 .stations-list {
@@ -715,20 +887,21 @@ export default {
 .sort-options {
   display: flex;
   justify-content: center;
-  margin-bottom: 16px;
+  margin: 20px 0;
+  gap: 12px;
 }
 
 .sort-button {
   background-color: #f1f5f9;
   border: none;
   border-radius: 20px;
-  padding: 8px 16px;
-  margin: 0 8px;
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sort-button.active {
@@ -738,10 +911,82 @@ export default {
 
 .sort-button:hover {
   background-color: #e2e8f0;
+  transform: translateY(-2px);
 }
 
 .sort-button.active:hover {
   background-color: #2563eb;
+}
+
+.bus-arrival-info {
+  margin-top: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.bus-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bus-info:last-child {
+  margin-bottom: 0;
+}
+
+.bus-info svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.bus-info span {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-right: 16px;
+}
+
+.refresh-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  transition: all 0.3s ease;
+}
+
+.refresh-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
+}
+
+.refresh-button:active {
+  transform: scale(0.95) translateY(1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.no-stations {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+.no-stations p {
+  color: #64748b;
+  font-size: 1rem;
 }
 
 @media (max-width: 390px) {
@@ -753,5 +998,83 @@ export default {
   .station-probability {
     font-size: 0.8125rem;
   }
+
+  .bus-info {
+    font-size: 0.8125rem;
+  }
+
+  .refresh-button {
+    width: 48px;
+    height: 48px;
+  }
+  .sort-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .check-route-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+}
+
+.custom-zoom-control {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  font-weight: bold;
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.zoom-button:hover {
+  background-color: #f0f0f0;
+}
+
+.zoom-in {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.check-route-button {
+  display: block;
+  width: calc(100% - 40px);
+  max-width: 300px;
+  margin: 20px auto;
+  padding: 14px 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+}
+
+.check-route-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
+}
+
+.check-route-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 </style>

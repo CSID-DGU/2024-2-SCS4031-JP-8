@@ -129,11 +129,6 @@ const routes = [
     component: BusDetailLocation
   },
   {
-    path: '/buslocation',
-    name: 'buslocation',
-    component: BusDetailLocation
-  },
-  {
     path: '/debugging',
     name: 'debugging',
     component: Debugging

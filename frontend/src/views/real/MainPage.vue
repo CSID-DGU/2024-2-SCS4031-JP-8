@@ -2,39 +2,36 @@
   <div class="background">
     <div class="mobile-container">
       <header class="header">
-        <img
-          :src="require('@/assets/Icons/MainLogo.svg')"
-          alt="Logo"
-          style="margin-right: -170px"
-        />
-
-        <h1>만차 버스 길찾기</h1>
+        <div class="logo">
+          <div class="logo-icon-container">
+            <FontAwesomeIcon icon="fa-solid fa-bus-alt" class="logo-icon" />
+          </div>
+          <h1 class="logo-text">또타자</h1>
+        </div>
         <SlidingMenu />
       </header>
       <SearchFormComponent />
+      <div class="map-container" ref="mapContainer">
+        <div class="map-controls">
+          <button class="map-button zoom-in" @click="zoomIn">
+            <FontAwesomeIcon icon="fa-solid fa-plus" />
+          </button>
+          <button class="map-button zoom-out" @click="zoomOut">
+            <FontAwesomeIcon icon="fa-solid fa-minus" />
+          </button>
+        </div>
+        <button class="location-button" @click="getLocation">
+          <FontAwesomeIcon icon="fa-solid fa-crosshairs" />
+        </button>
+      </div>
+
       <button
         class="search-button"
         :disabled="!canSearch"
         @click="searchRoutes"
-        style="color: #625858"
       >
         길 찾기
       </button>
-
-      <!-- 내 위치 다시 불러오기 버튼 -->
-      <button class="location-button" @click="getLocation">
-        내 위치 다시 불러오기
-      </button>
-
-      <!-- 네이버 지도 -->
-      <div class="map-container" ref="mapContainer"></div>
-
-      <!-- main-landing.png 이미지 -->
-      <img
-        src="@/assets/Icons/main-landing.png"
-        alt="Landing Background"
-        class="landing-image"
-      />
 
       <Footer />
     </div>
@@ -46,20 +43,33 @@ import SearchFormComponent from '@/components/layout/SearchFormComponent.vue'
 import { mapState, mapActions } from 'vuex'
 import SlidingMenu from '../SlidingMenu.vue'
 import Footer from '../Footer.vue'
-import MainLogo from '@/assets/Icons/MainLogo.svg'
+import { ArrowLeftIcon } from 'lucide-vue-next'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import {
+  faPlus,
+  faMinus,
+  faCrosshairs,
+  faBusAlt
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
+library.add(faPlus, faMinus, faCrosshairs, faBusAlt)
 
 export default {
   components: {
     SearchFormComponent,
     SlidingMenu,
-    Footer
+    Footer,
+    ArrowLeftIcon,
+    FontAwesomeIcon
   },
   data() {
     return {
       location: {
         latitude: 37.51347, // 기본 위치 (서울)
         longitude: 127.041722
-      }
+      },
+      map: null
     }
   },
   computed: {
@@ -147,13 +157,13 @@ export default {
         const mapContainer = this.$refs.mapContainer
 
         if (mapContainer) {
-          const map = new naver.maps.Map(mapContainer, {
+          this.map = new naver.maps.Map(mapContainer, {
             center: new naver.maps.LatLng(
               this.location.latitude,
               this.location.longitude
             ),
             zoom: 16,
-            zoomControl: true, // 확대/축소 버튼 추가
+            zoomControl: false,
             scaleControl: false,
             logoControl: false,
             mapDataControl: false,
@@ -166,13 +176,23 @@ export default {
               this.location.latitude,
               this.location.longitude
             ),
-            map: map,
+            map: this.map,
             icon: '../../assets/Icons/Group 24.png' // 커스텀 마커 아이콘 경로
           })
         } else {
           console.error('지도 컨테이너를 찾을 수 없습니다.')
         }
       })
+    },
+    zoomIn() {
+      if (this.map) {
+        this.map.setZoom(this.map.getZoom() + 1)
+      }
+    },
+    zoomOut() {
+      if (this.map) {
+        this.map.setZoom(this.map.getZoom() - 1)
+      }
     }
   },
   mounted() {
@@ -182,6 +202,8 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
 .background {
   background-color: #ffffff;
   min-height: 100vh;
@@ -189,93 +211,156 @@ export default {
 }
 
 .mobile-container {
-  width: 100%;
-  max-width: 425px;
+  width: 420px;
   margin: 0 auto;
   padding: 0;
   background-color: white;
   height: 100vh;
   overflow-y: auto;
   position: relative;
+  font-family: 'Pretendard', sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
-  background-color: #ff4d15;
-  padding: 1rem;
+  background-color: #ffffff;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 60px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.header h1 {
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 600;
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-icon-container {
+  background-color: #3b82f6;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.logo-icon {
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.logo-text {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.header img {
-  height: 28px;
-  margin-right: 0 !important;
-}
-
-.search-button {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 393px;
-  padding: 16px;
-  background-color: #ff4d15;
-  color: white !important;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(255, 77, 21, 0.2);
-  z-index: 100;
-}
-
-.search-button:disabled {
-  background-color: #ffe5dd;
-  color: rgba(255, 77, 21, 0.5) !important;
-}
-
-.location-button {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 393px;
-  padding: 14px;
-  background-color: #f5f6f7;
-  color: #666666;
-  font-size: 14px;
-  font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  z-index: 100;
+  letter-spacing: -0.5px;
 }
 
 .map-container {
   width: 100%;
-  height: calc(100vh - 60px);
-  margin: 0;
-  border-radius: 0;
+  height: 350px;
+  margin: 0 0 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Hide the landing image as it's not present in the design */
-.landing-image {
-  display: none;
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 100;
 }
 
-/* Ensure the map takes up the full height */
-.map-container div {
-  height: 100% !important;
+.map-button {
+  width: 40px;
+  height: 40px;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 20px;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.location-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 20px;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.search-button {
+  width: calc(100% - 32px);
+  margin: 16px auto;
+  padding: 16px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+}
+
+.search-button:disabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 390px) {
+  .header {
+    padding: 12px;
+  }
+
+  .logo-icon-container {
+    width: 36px;
+    height: 36px;
+  }
+
+  .logo-icon {
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 1.25rem;
+  }
+
+  .search-button {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .location-button,
+  .map-button {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
 }
 </style>

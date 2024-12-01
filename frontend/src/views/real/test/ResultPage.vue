@@ -52,7 +52,7 @@
 
       <h3 class="section-title">
         길찾기 구간 중<br />
-        현재 제공하는 광역버스 노선이에요.
+        현재 운행하는 광역버스 노선이에요.
       </h3>
       <div v-if="filteredRoutes.length > 0" class="route-info">
         <ul>

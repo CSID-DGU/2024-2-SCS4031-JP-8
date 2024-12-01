@@ -319,38 +319,57 @@ export default {
   z-index: 100;
 }
 
-@media (max-width: 390px) {
-  .map-button,
-  .location-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  .map-button svg,
-  .location-button svg {
-    width: 22px;
-    height: 22px;
-  }
+.search-button-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 1) 80%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  padding: 16px 16px 24px;
+  display: flex;
+  justify-content: center;
+  z-index: 100;
 }
 
 .search-button {
   width: calc(100% - 32px);
-  margin: 16px auto;
-  padding: 16px;
+  max-width: 390px;
+  margin: 0 auto;
+  padding: 14px;
   background-color: #3b82f6;
   color: white;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25),
+    0 8px 16px rgba(59, 130, 246, 0.1);
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3),
+    0 10px 20px rgba(59, 130, 246, 0.15);
+}
+
+.search-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .search-button:disabled {
   background-color: #e2e8f0;
   color: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 @media (max-width: 390px) {
@@ -372,8 +391,24 @@ export default {
   }
 
   .search-button {
-    font-size: 14px;
+    font-size: 16px;
     padding: 12px;
+  }
+
+  .search-button-container {
+    padding: 12px 16px 20px;
+  }
+
+  .map-button,
+  .location-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .map-button svg,
+  .location-button svg {
+    width: 22px;
+    height: 22px;
   }
 }
 </style>

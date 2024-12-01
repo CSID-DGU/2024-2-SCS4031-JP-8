@@ -1,55 +1,46 @@
 <template>
   <div class="search-form">
     <div class="input-group">
-      <label><i class="fas fa-map-marker-alt"></i></label>
+      <MapPinIcon class="input-icon" />
       <input
         v-model="departureName"
         placeholder="출발지를 입력하세요"
         @focus="goToSearchDeparture"
         readonly
       />
-      <button v-if="departureName" @click="clearDeparture" class="clear-button">
-        ✕
-      </button>
+      <XCircleIcon
+        v-if="departureName"
+        @click="clearDeparture"
+        class="clear-button"
+      />
     </div>
     <div class="input-group">
-      <label><i class="fas fa-flag-checkered"></i></label>
+      <FlagIcon class="input-icon" />
       <input
         v-model="destinationName"
         placeholder="도착지를 입력하세요"
         @focus="goToSearchDestination"
         readonly
       />
-      <button
+      <XCircleIcon
         v-if="destinationName"
         @click="clearDestination"
         class="clear-button"
-      >
-        ✕
-      </button>
+      />
     </div>
 
-    <!-- 최근 경로 -->
-    <!-- <div v-if="recentRoutes.length > 0" class="recent-routes">
-      <h3>최근 경로</h3>
-      <ul>
-        <li v-for="(route, index) in recentRoutes" :key="index">
-          <span @click="applyRecentRoute(route)">
-            {{ route.departureName }} ➔ {{ route.destinationName }}
-          </span>
-          <button @click="removeRecentRoute(index)">x</button>
-        </li>
-      </ul>
-    </div> -->
-
     <div class="input-group">
-      <label><i class="fas fa-clock"></i></label>
+      <ClockIcon class="input-icon" />
       <input :value="formattedTime" @click="openTimeModal" readonly />
-      <button @click="setCurrentTime" class="realtime-button">실시간</button>
+      <button @click="setCurrentTime" class="realtime-button">
+        <ZapIcon class="realtime-icon" />
+        실시간
+      </button>
     </div>
 
     <div class="switch-button-container">
       <button @click="switchLocations" class="switch-button">
+        <ArrowsUpDownIcon class="switch-icon" />
         출발지와 도착지 바꾸기
       </button>
     </div>
@@ -59,8 +50,8 @@
         <div v-if="showTimeModal" class="modal">
           <div class="modal-content">
             <h3>출발 시각 설정</h3>
-            <div class="horizontal-pickers">
-              <div id="date-picker" class="picker scrollable">
+            <div class="time-selector">
+              <div class="date-picker scrollable">
                 <button
                   v-for="(day, index) in dateOptions"
                   :key="index"
@@ -79,10 +70,10 @@
                     :class="{ selected: tempSelectedHour === hour }"
                     @click="tempSelectedHour = hour"
                   >
-                    {{ hour }}
+                    {{ hour.toString().padStart(2, '0') }}
                   </div>
                 </div>
-                <span>시</span>
+                <span class="time-separator">:</span>
                 <div class="scrollable">
                   <div
                     v-for="minute in 6"
@@ -93,10 +84,9 @@
                     }"
                     @click="tempSelectedMinute = (minute - 1) * 10"
                   >
-                    {{ (minute - 1) * 10 }}
+                    {{ ((minute - 1) * 10).toString().padStart(2, '0') }}
                   </div>
                 </div>
-                <span>분</span>
               </div>
               <div class="meridiem-picker">
                 <button
@@ -113,12 +103,14 @@
                 </button>
               </div>
             </div>
-            <button @click="confirmTime" class="modal-button primary">
-              설정
-            </button>
-            <button @click="closeTimeModal" class="modal-button secondary">
-              닫기
-            </button>
+            <div class="modal-actions">
+              <button @click="confirmTime" class="modal-button primary">
+                설정
+              </button>
+              <button @click="closeTimeModal" class="modal-button secondary">
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       </transition>
@@ -130,7 +122,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-//import './SearchFormStyle.css'
+import {
+  MapPinIcon,
+  FlagIcon,
+  ClockIcon,
+  XCircleIcon,
+  ZapIcon,
+  ArrowsUpDownIcon
+} from 'lucide-vue-next'
 
 const store = useStore()
 const router = useRouter()
@@ -187,7 +186,6 @@ const setCurrentTime = () => {
   selectedMinute.value = now.getMinutes()
 }
 
-// 모달을 열 때 기존의 선택 값을 임시 값에 복사
 const openTimeModal = () => {
   tempSelectedDay.value = selectedDay.value
   tempSelectedMeridiem.value = selectedMeridiem.value
@@ -197,7 +195,6 @@ const openTimeModal = () => {
 }
 
 const switchLocations = () => {
-  // 현재 출발지와 도착지 정보 가져오기
   const tempDeparture = {
     name: store.state.departure.departure?.name || '',
     coordinates: store.state.departure.departure?.coordinates || {}
@@ -207,7 +204,6 @@ const switchLocations = () => {
     coordinates: store.state.destination.destination?.coordinates || {}
   }
 
-  // 출발지와 도착지를 Vuex에 저장
   store.commit('departure/setDeparture', tempDestination)
   store.commit('destination/setDestination', tempDeparture)
 }
@@ -234,7 +230,6 @@ const confirmTime = () => {
   showTimeModal.value = false
 }
 
-// 닫기 버튼 클릭 시 임시 값을 초기화하고 모달 닫기
 const closeTimeModal = () => {
   showTimeModal.value = false
 }
@@ -270,47 +265,53 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 </script>
 
 <style scoped>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
 .search-form {
-  position: absolute;
-  top: 60px;
-  left: 0;
-  right: 0;
-  background: white;
+  font-family: 'Pretendard', sans-serif;
   padding: 16px;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .input-group {
   position: relative;
-  margin-bottom: 8px;
-}
-
-.input-group:last-child {
-  margin-bottom: 0;
+  margin-bottom: 12px;
 }
 
 .input-group input {
   width: 100%;
-  padding: 12px 16px;
-  padding-left: 40px;
-  border: 1px solid #e8e9ea;
-  border-radius: 8px;
-  font-size: 15px;
-  color: #333;
-  background: #f5f6f7;
+  margin: 0;
+  padding: 12px 40px 12px 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  height: 44px;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-group input::placeholder {
-  color: #999;
+  color: #94a3b8;
 }
 
-.input-group label {
+.input-icon {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #ff4d15;
+  color: #3b82f6;
+  width: 20px;
+  height: 20px;
 }
 
 .clear-button {
@@ -318,11 +319,15 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #999;
-  padding: 4px;
+  color: #94a3b8;
   cursor: pointer;
+  width: 20px;
+  height: 20px;
+  transition: color 0.3s ease;
+}
+
+.clear-button:hover {
+  color: #64748b;
 }
 
 .switch-button-container {
@@ -332,12 +337,27 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 .switch-button {
   width: 100%;
   padding: 12px;
-  background: #f5f6f7;
+  background: #f1f5f9;
   border: none;
-  border-radius: 8px;
-  color: #666;
+  border-radius: 12px;
+  color: #1e293b;
   font-size: 14px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  height: 44px;
+}
+
+.switch-button:hover {
+  background: #e2e8f0;
+}
+
+.switch-icon {
+  margin-right: 8px;
+  width: 20px;
+  height: 20px;
 }
 
 .realtime-button {
@@ -345,16 +365,28 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  background: #ff4d15;
+  background: #3b82f6;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
 }
 
-/* Modal styles */
+.realtime-button:hover {
+  background: #2563eb;
+}
+
+.realtime-icon {
+  margin-right: 4px;
+  width: 14px;
+  height: 14px;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -363,84 +395,211 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background: white;
-  padding: 24px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 360px;
+  padding: 20px;
+  border-radius: 20px 20px 0 0;
+  width: 420px;
+  max-width: 100%;
+  margin: 0 auto;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modal-content h3 {
   margin: 0 0 20px;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #1e293b;
+  text-align: center;
 }
 
-.modal-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  margin-top: 12px;
+.time-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.modal-button.primary {
-  background: #ff4d15;
+.date-picker,
+.time-picker .scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.date-picker::-webkit-scrollbar,
+.time-picker .scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+.date-picker {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.date-picker button {
+  flex: 0 0 auto;
+  padding: 10px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  font-size: 14px;
+  color: #1e293b;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.date-picker button:active,
+.meridiem-picker button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.date-picker button.selected,
+.time-option.selected,
+.meridiem-picker button.selected {
+  background: #3b82f6;
   color: white;
+  border-color: #3b82f6;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
-.modal-button.secondary {
-  background: #f5f6f7;
-  color: #666;
-}
-
-/* Time picker styles */
 .time-picker {
   display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.time-picker .scrollable {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin: 20px 0;
+  height: 120px; /* 3개의 항목이 보이도록 높이 조정 */
+  scroll-behavior: smooth;
+  position: relative;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .time-option {
-  padding: 8px 16px;
-  text-align: center;
-  cursor: pointer;
+  padding: 8px;
+  font-size: 16px;
+  color: #1e293b;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .time-option.selected {
-  background: #ffe5dd;
-  color: #ff4d15;
-  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+}
+
+.time-option.selected::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  top: 0;
+  bottom: 0;
+  background-color: #3b82f6;
+  z-index: -1;
+  border-radius: 20px;
+}
+
+.time-separator {
+  font-size: 24px;
+  color: #64748b;
+  align-self: center;
 }
 
 .meridiem-picker {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .meridiem-picker button {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #e8e9ea;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
   background: white;
-  color: #666;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.meridiem-picker button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .meridiem-picker button.selected {
-  background: #ffe5dd;
-  color: #ff4d15;
-  border-color: #ff4d15;
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.modal-button {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modal-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.modal-button.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.modal-button.secondary {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
 }
 </style>

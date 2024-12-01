@@ -258,7 +258,7 @@ export default {
           (firstStation.x + lastStation.x) / 2
         ),
         zoom: 15,
-        zoomControl: true,
+        zoomControl: false,
         zoomControlOptions: {
           position: naver.maps.Position.TOP_RIGHT
         }

@@ -87,6 +87,48 @@
           </div>
         </div>
         <RouteBar :route="route" />
+
+        <!-- 경로 세부 사항 (타임라인 스타일) -->
+        <div class="route-details">
+          <h3 class="section-title">경로 <br />세부 단계</h3>
+          <div class="timeline">
+            <div
+              v-for="(segment, index) in route.subPath"
+              :key="index"
+              class="timeline-segment"
+            >
+              <div class="timeline-point">
+                <div class="timeline-marker" :class="getMarkerClass(segment)">
+                  <component
+                    :is="getSegmentIcon(segment)"
+                    size="16"
+                    class="marker-icon"
+                  />
+                </div>
+                <div class="timeline-content">
+                  <div class="station-info">
+                    <h4>{{ getStationName(segment) }}</h4>
+                    <span class="arrival-time">{{
+                      formatTime(segment.sectionTime)
+                    }}</span>
+                  </div>
+                  <div class="segment-details">
+                    {{ getSegmentDetails(segment) }}
+                  </div>
+                  <div v-if="segment.trafficType === 3" class="walking-info">
+                    <WalkIcon size="16" class="walk-icon" />
+                    <span>도보 {{ formatDistance(segment.distance) }}</span>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="index < route.subPath.length - 1"
+                class="timeline-line"
+                :class="getLineClass(segment)"
+              ></div>
+            </div>
+          </div>
+        </div>
         <button class="detail-button" @click="goToPathDetail(route)">
           세부 경로 안내
         </button>
@@ -108,7 +150,9 @@ import {
   ArrowLeftRightIcon,
   MapPinIcon,
   FlagIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  SubwayIcon,
+  BusIcon
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -258,6 +302,46 @@ const formatDistance = (meters) => {
   } else {
     return `${(meters / 1000).toFixed(1)}km`
   }
+}
+
+const formatTime = (minutes) => {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return `${hours > 0 ? hours + '시간 ' : ''}${mins}분`
+}
+
+const getMarkerClass = (segment) => {
+  if (segment.trafficType === 1) return 'marker-subway'
+  if (segment.trafficType === 2) return 'marker-bus'
+  if (segment.trafficType === 3) return 'marker-walk'
+  return ''
+}
+
+const getSegmentIcon = (segment) => {
+  if (segment.trafficType === 1) return SubwayIcon
+  if (segment.trafficType === 2) return BusIcon
+  if (segment.trafficType === 3) return WalkIcon
+  return null
+}
+
+const getStationName = (segment) => {
+  return segment.startName || ''
+}
+
+const getSegmentDetails = (segment) => {
+  if (segment.trafficType === 1)
+    return `${segment.lane[0].name} (${segment.startName} → ${segment.endName})`
+  if (segment.trafficType === 2)
+    return `${segment.lane[0].busNo} (${segment.startName} → ${segment.endName})`
+  if (segment.trafficType === 3) return '도보 이동'
+  return ''
+}
+
+const getLineClass = (segment) => {
+  if (segment.trafficType === 1) return 'line-subway'
+  if (segment.trafficType === 2) return 'line-bus'
+  if (segment.trafficType === 3) return 'line-walk'
+  return ''
 }
 
 onMounted(async () => {
@@ -539,6 +623,116 @@ onMounted(async () => {
 
 .detail-button:hover {
   background-color: #2563eb;
+}
+
+/* 경로 세부 사항 스타일 */
+.route-details {
+  margin-top: 20px;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: #334155;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline-segment {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-point {
+  display: flex;
+  align-items: flex-start;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -30px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.marker-subway {
+  background-color: #3b82f6;
+}
+
+.marker-bus {
+  background-color: #10b981;
+}
+
+.marker-walk {
+  background-color: #f59e0b;
+}
+
+.marker-icon {
+  color: #ffffff;
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.station-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.station-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.segment-details {
+  font-size: 0.875rem;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.walking-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.walk-icon {
+  margin-right: 4px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: -19px;
+  top: 24px;
+  bottom: -20px;
+  width: 2px;
+}
+
+.line-subway {
+  background-color: #3b82f6;
+}
+
+.line-bus {
+  background-color: #10b981;
+}
+
+.line-walk {
+  background-color: #f59e0b;
 }
 
 @media (max-width: 390px) {

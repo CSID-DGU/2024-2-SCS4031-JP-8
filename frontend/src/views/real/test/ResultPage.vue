@@ -77,15 +77,32 @@
           {{ selectedRoute.busNo }}번 노선 정류장 추천
         </h2>
         <div id="map"></div>
+        <div class="sort-options">
+          <button
+            @click="sortBy('probability')"
+            :class="{ active: currentSort === 'probability' }"
+            class="sort-button"
+          >
+            확률순
+          </button>
+          <button
+            @click="sortBy('distance')"
+            :class="{ active: currentSort === 'distance' }"
+            class="sort-button"
+          >
+            거리순
+          </button>
+        </div>
         <div class="stations-list">
           <div
-            v-for="(station, index) in filteredStations"
+            v-for="(station, index) in sortedStations"
             :key="station.stationID"
             class="station-timeline-item"
             :class="{
-              'highest-probability': isHighestProbability(station.idx),
+              'high-probability': isHighProbability(station.idx),
+              'low-probability': !isHighProbability(station.idx),
               first: index === 0,
-              last: index === filteredStations.length - 1
+              last: index === sortedStations.length - 1
             }"
             @click="selectStation(station)"
           >
@@ -94,17 +111,46 @@
             </div>
             <div class="station-content">
               <div class="station-header">
-                <p class="station-name">{{ station.stationName }}</p>
-                <p
-                  class="station-probability"
-                  v-if="
-                    calculateProbabilityForStation(station.idx) !== undefined
-                  "
-                >
-                  {{ calculateProbabilityForStation(station.idx).toFixed(1) }}%
-                </p>
+                <h4 class="station-name">{{ station.stationName }}</h4>
+                <div class="station-probability">
+                  <svg
+                    v-if="isHighProbability(station.idx)"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-trending-up"
+                  >
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                  <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-trending-down"
+                  >
+                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                    <polyline points="17 18 23 18 23 12"></polyline>
+                  </svg>
+                  {{ isHighProbability(station.idx) ? '높음' : '낮음' }}
+                </div>
               </div>
-              <p class="station-description">정류장 {{ station.idx }}번</p>
+              <p class="station-description">
+                {{ station.stationName }} 정류장
+              </p>
             </div>
           </div>
         </div>
@@ -135,6 +181,7 @@ export default {
     const filteredStations = ref([])
     const selectedStations = ref([])
     const map = ref(null)
+    const currentSort = ref('probability')
 
     const goBack = () => {
       router.go(-1)
@@ -324,12 +371,7 @@ export default {
       return day === 0 ? '일요일' : day === 6 ? '토요일' : '평일'
     }
 
-    const calculateProbabilityForStation = (idx) => {
-      const station = selectedStations.value.find((s) => s.seq === idx)
-      return station ? station.probability : 0
-    }
-
-    const isHighestProbability = (idx) => {
+    const isHighProbability = (idx) => {
       if (!selectedStations.value || selectedStations.value.length === 0)
         return false
       const currentStation = selectedStations.value.find((s) => s.seq === idx)
@@ -338,8 +380,41 @@ export default {
       const maxProbability = Math.max(
         ...selectedStations.value.map((s) => s.probability)
       )
-      return currentStation.probability === maxProbability
+      return currentStation.probability >= maxProbability * 0.8 // 80% of max probability is considered high
     }
+
+    const sortBy = (sortType) => {
+      currentSort.value = sortType
+      sortedStations.value = [...filteredStations.value].sort((a, b) => {
+        if (sortType === 'probability') {
+          const probA =
+            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+            0
+          const probB =
+            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+            0
+          return probB - probA
+        } else {
+          return a.idx - b.idx
+        }
+      })
+    }
+
+    const sortedStations = computed(() => {
+      return [...filteredStations.value].sort((a, b) => {
+        if (currentSort.value === 'probability') {
+          const probA =
+            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+            0
+          const probB =
+            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+            0
+          return probB - probA
+        } else {
+          return a.idx - b.idx
+        }
+      })
+    })
 
     onMounted(() => {
       searchTransitRoutes()
@@ -351,12 +426,13 @@ export default {
       loading,
       filteredRoutes,
       selectedRoute,
-      filteredStations,
+      sortedStations,
       selectBusRoute,
-      calculateProbabilityForStation,
       goBack,
-      isHighestProbability,
-      selectStation
+      isHighProbability,
+      selectStation,
+      currentSort,
+      sortBy
     }
   }
 }
@@ -578,30 +654,94 @@ export default {
 .station-content {
   flex: 1;
   max-width: calc(100% - 80px);
-  background: #f8fafc;
   border-radius: 12px;
   padding: 16px;
   transition: all 0.2s ease;
 }
 
-/* Highest probability styles */
-.station-timeline-item.highest-probability .station-content {
-  background-color: #3b82f6;
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.station-timeline-item.highest-probability .station-name,
-.station-timeline-item.highest-probability .station-description,
-.station-timeline-item.highest-probability .station-probability {
-  color: white;
+.station-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
 }
 
-.station-timeline-item.highest-probability .timeline-node {
+.station-probability {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.station-probability svg {
+  margin-right: 4px;
+}
+
+.station-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 8px 0 0;
+}
+
+/* High probability styles */
+.station-timeline-item.high-probability .station-content {
+  background-color: #93c5fd;
+}
+
+.station-timeline-item.high-probability .station-probability {
+  color: #1d4ed8;
+}
+
+.station-timeline-item.high-probability .timeline-node {
   background-color: #3b82f6;
   border-color: #2563eb;
 }
 
-.station-timeline-item.highest-probability .timeline-connector::before {
-  border-left-color: #3b82f6;
+/* Low probability styles */
+.station-timeline-item.low-probability .station-content {
+  background-color: #e2e8f0;
+}
+
+.station-timeline-item.low-probability .station-probability {
+  color: #64748b;
+}
+
+.sort-options {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.sort-button {
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  margin: 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.sort-button:hover {
+  background-color: #e2e8f0;
+}
+
+.sort-button.active:hover {
+  background-color: #2563eb;
 }
 
 @media (max-width: 390px) {

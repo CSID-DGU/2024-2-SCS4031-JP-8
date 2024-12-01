@@ -45,40 +45,44 @@
         </div>
       </div>
 
-      <!-- 경로 세부 사항 -->
+      <!-- 경로 세부 사항 (타임라인 스타일) -->
       <div class="route-details">
         <h3 class="section-title">경로 세부 단계</h3>
-        <div
-          v-for="(segment, index) in route.subPath"
-          :key="index"
-          class="segment"
-        >
-          <div v-if="segment.trafficType === 3" class="segment-walk">
-            <WalkIcon size="24" class="segment-icon" />
-            <div class="segment-info">
-              <p class="segment-title">도보</p>
-              <p class="segment-detail">{{ segment.distance }}m</p>
+        <div class="timeline">
+          <div
+            v-for="(segment, index) in route.subPath"
+            :key="index"
+            class="timeline-segment"
+          >
+            <div class="timeline-point">
+              <div class="timeline-marker" :class="getMarkerClass(segment)">
+                <component
+                  :is="getSegmentIcon(segment)"
+                  size="16"
+                  class="marker-icon"
+                />
+              </div>
+              <div class="timeline-content">
+                <div class="station-info">
+                  <h4>{{ getStationName(segment) }}</h4>
+                  <span class="arrival-time">{{
+                    formatTime(segment.sectionTime)
+                  }}</span>
+                </div>
+                <div class="segment-details">
+                  {{ getSegmentDetails(segment) }}
+                </div>
+                <div v-if="segment.trafficType === 3" class="walking-info">
+                  <WalkIcon size="16" class="walk-icon" />
+                  <span>도보 {{ formatDistance(segment.distance) }}</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div v-else-if="segment.trafficType === 2" class="segment-bus">
-            <BusIcon size="24" class="segment-icon" />
-            <div class="segment-info">
-              <p class="segment-title">버스 {{ segment.lane[0].busNo }}</p>
-              <p class="segment-detail">
-                {{ segment.startName }} → {{ segment.endName }}
-              </p>
-              <p class="segment-detail">정류장 {{ segment.stationCount }}개</p>
-            </div>
-          </div>
-          <div v-else-if="segment.trafficType === 1" class="segment-subway">
-            <TrainIcon size="24" class="segment-icon" />
-            <div class="segment-info">
-              <p class="segment-title">{{ segment.lane[0].name }}</p>
-              <p class="segment-detail">
-                {{ segment.startName }} → {{ segment.endName }}
-              </p>
-              <p class="segment-detail">정거장 {{ segment.stationCount }}개</p>
-            </div>
+            <div
+              v-if="index < route.subPath.length - 1"
+              class="timeline-line"
+              :class="getLineClass(segment)"
+            ></div>
           </div>
         </div>
       </div>
@@ -90,143 +94,192 @@
   </div>
 </template>
 
-<script>
-import { defineComponent, ref, computed, onMounted, nextTick } from 'vue'
+<script setup>
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowLeftIcon,
   MapPinIcon,
   FlagIcon,
   WalkIcon,
-  BusIcon,
-  TrainIcon
+  TrainIcon,
+  BusIcon
 } from 'lucide-vue-next'
 
-export default defineComponent({
-  name: 'PathDetail',
-  components: {
-    ArrowLeftIcon,
-    MapPinIcon,
-    FlagIcon,
-    WalkIcon,
-    BusIcon,
-    TrainIcon
-  },
-  setup() {
-    const router = useRouter()
-    const departure = ref(null)
-    const station = ref(null)
-    const route = ref(null)
+const router = useRouter()
+const departure = ref(null)
+const station = ref(null)
+const route = ref(null)
 
-    const departureName = computed(() => departure.value?.name || '정보 없음')
-    const stationName = computed(() => station.value?.name || '정보 없음')
+const departureName = computed(() => departure.value?.name || '정보 없음')
+const stationName = computed(() => station.value?.name || '정보 없음')
 
-    const goBack = () => {
-      router.go(-1)
-    }
+const goBack = () => {
+  router.go(-1)
+}
 
-    const initializeMap = () => {
-      const sx = departure.value.x
-      const sy = departure.value.y
-      const ex = station.value.x
-      const ey = station.value.y
+const initializeMap = () => {
+  const sx = departure.value.x
+  const sy = departure.value.y
+  const ex = station.value.x
+  const ey = station.value.y
 
-      // 지도 초기화
-      const centerPoint = new naver.maps.LatLng((sy + ey) / 2, (sx + ex) / 2)
-      const mapOptions = {
-        center: centerPoint,
-        zoom: 10,
-        zoomControl: true,
-        zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
-      }
-      const map = new naver.maps.Map('map', mapOptions)
+  // 지도 초기화
+  const centerPoint = new naver.maps.LatLng((sy + ey) / 2, (sx + ex) / 2)
+  const mapOptions = {
+    center: centerPoint,
+    zoom: 10,
+    zoomControl: true,
+    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
+  }
+  const map = new naver.maps.Map('map', mapOptions)
 
-      // ODsay API로 경로 데이터 가져오기
-      searchPubTransPath(map, sx, sy, ex, ey)
-    }
+  // ODsay API로 경로 데이터 가져오기
+  searchPubTransPath(map, sx, sy, ex, ey)
+}
 
-    const searchPubTransPath = (map, sx, sy, ex, ey) => {
-      const url = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
-      fetch(url)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.result?.path?.[0]?.info?.mapObj) {
-            loadLane(map, data.result.path[0].info.mapObj, sx, sy, ex, ey)
-          }
-        })
-        .catch((error) => console.error('경로 검색 중 오류:', error))
-    }
-
-    const loadLane = (map, mapObj, sx, sy, ex, ey) => {
-      const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
-      fetch(url)
-        .then((response) => response.json())
-        .then((data) => {
-          drawMarkers(map, sx, sy, ex, ey)
-          drawPolyLines(map, data)
-        })
-        .catch((error) => console.error('경로 데이터 로드 중 오류:', error))
-    }
-
-    const drawMarkers = (map, sx, sy, ex, ey) => {
-      // 출발지 마커
-      new naver.maps.Marker({
-        position: new naver.maps.LatLng(sy, sx),
-        map: map
-      })
-
-      // 도착지 마커
-      new naver.maps.Marker({
-        position: new naver.maps.LatLng(ey, ex),
-        map: map
-      })
-    }
-
-    const drawPolyLines = (map, data) => {
-      data.result.lane.forEach((lane) => {
-        lane.section.forEach((section) => {
-          const lineArray = section.graphPos.map(
-            (pos) => new naver.maps.LatLng(pos.y, pos.x)
-          )
-          const color =
-            lane.type === 1
-              ? '#3a54fc'
-              : lane.type === 2
-              ? '#42c700'
-              : '#000000'
-          new naver.maps.Polyline({
-            map: map,
-            path: lineArray,
-            strokeWeight: 7,
-            strokeColor: color
-          })
-        })
-      })
-    }
-
-    onMounted(() => {
-      // 세션 스토리지에서 데이터 가져오기
-      departure.value = JSON.parse(sessionStorage.getItem('departure'))
-      station.value = JSON.parse(sessionStorage.getItem('station'))
-      route.value = JSON.parse(sessionStorage.getItem('route'))
-
-      if (departure.value && station.value && route.value) {
-        nextTick(() => {
-          initializeMap()
-        })
-      } else {
-        console.error('필수 데이터가 없습니다.')
+const searchPubTransPath = (map, sx, sy, ex, ey) => {
+  const url = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.result?.path?.[0]?.info?.mapObj) {
+        loadLane(map, data.result.path[0].info.mapObj, sx, sy, ex, ey)
       }
     })
+    .catch((error) => console.error('경로 검색 중 오류:', error))
+}
 
-    return {
-      departure,
-      station,
-      route,
-      departureName,
-      stationName,
-      goBack
-    }
+const loadLane = (map, mapObj, sx, sy, ex, ey) => {
+  const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      drawMarkers(map, sx, sy, ex, ey)
+      drawPolyLines(map, data)
+    })
+    .catch((error) => console.error('경로 데이터 로드 중 오류:', error))
+}
+
+const drawMarkers = (map, sx, sy, ex, ey) => {
+  // 출발지 마커
+  new naver.maps.Marker({
+    position: new naver.maps.LatLng(sy, sx),
+    map: map
+  })
+
+  // 도착지 마커
+  new naver.maps.Marker({
+    position: new naver.maps.LatLng(ey, ex),
+    map: map
+  })
+}
+
+const drawPolyLines = (map, data) => {
+  data.result.lane.forEach((lane) => {
+    lane.section.forEach((section) => {
+      const lineArray = section.graphPos.map(
+        (pos) => new naver.maps.LatLng(pos.y, pos.x)
+      )
+      const color =
+        lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#42c700' : '#000000'
+      new naver.maps.Polyline({
+        map: map,
+        path: lineArray,
+        strokeWeight: 7,
+        strokeColor: color
+      })
+    })
+  })
+}
+
+const formatTime = (minutes) => {
+  if (!minutes) return ''
+  const now = new Date()
+  const time = new Date(now.getTime() + minutes * 60000)
+  return time.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+}
+
+const formatDistance = (meters) => {
+  if (!meters) return ''
+  return meters < 1000 ? `${meters}m` : `${(meters / 1000).toFixed(1)}km`
+}
+
+const getMarkerClass = (segment) => {
+  switch (segment.trafficType) {
+    case 1:
+      return 'marker-subway'
+    case 2:
+      return 'marker-bus'
+    case 3:
+      return 'marker-walk'
+    default:
+      return ''
+  }
+}
+
+const getLineClass = (segment) => {
+  switch (segment.trafficType) {
+    case 1:
+      return 'line-subway'
+    case 2:
+      return 'line-bus'
+    case 3:
+      return 'line-walk'
+    default:
+      return ''
+  }
+}
+
+const getSegmentIcon = (segment) => {
+  switch (segment.trafficType) {
+    case 1:
+      return TrainIcon
+    case 2:
+      return BusIcon
+    case 3:
+      return WalkIcon
+    default:
+      return MapPinIcon
+  }
+}
+
+const getStationName = (segment) => {
+  if (segment.trafficType === 3) {
+    return '도보 이동'
+  }
+  return segment.startName
+}
+
+const getSegmentDetails = (segment) => {
+  switch (segment.trafficType) {
+    case 1:
+      return `${segment.lane[0].name} (${segment.stationCount}개 정거장)`
+    case 2:
+      return `${segment.lane[0].busNo}번 버스 (${segment.stationCount}개 정류장)`
+    case 3:
+      return ''
+    default:
+      return ''
+  }
+}
+
+onMounted(() => {
+  // 세션 스토리지에서 데이터 가져오기
+  departure.value = JSON.parse(sessionStorage.getItem('departure'))
+  station.value = JSON.parse(sessionStorage.getItem('station'))
+  route.value = JSON.parse(sessionStorage.getItem('route'))
+
+  if (departure.value && station.value && route.value) {
+    nextTick(() => {
+      initializeMap()
+    })
+  } else {
+    console.error('필수 데이터가 없습니다.')
   }
 })
 </script>
@@ -359,35 +412,107 @@ export default defineComponent({
   font-weight: 600;
 }
 
-.segment {
+.timeline {
+  position: relative;
+}
+
+.timeline-segment {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-point {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 16px;
-  padding: 16px;
-  background-color: #f8fafc;
-  border-radius: 12px;
 }
 
-.segment-icon {
+.timeline-marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-right: 16px;
-  color: #3b82f6;
+  flex-shrink: 0;
 }
 
-.segment-info {
+.marker-icon {
+  color: white;
+}
+
+.marker-subway {
+  background-color: #3b82f6;
+}
+
+.marker-bus {
+  background-color: #10b981;
+}
+
+.marker-walk {
+  background-color: #6b7280;
+}
+
+.timeline-content {
   flex: 1;
 }
 
-.segment-title {
+.station-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.station-info h4 {
   font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
-  margin: 0 0 4px 0;
+  margin: 0;
 }
 
-.segment-detail {
+.arrival-time {
   font-size: 0.875rem;
   color: #64748b;
-  margin: 0 0 2px 0;
+}
+
+.segment-details {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.walking-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.walk-icon {
+  color: #6b7280;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 16px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+}
+
+.line-subway {
+  background-color: #3b82f6;
+}
+
+.line-bus {
+  background-color: #10b981;
+}
+
+.line-walk {
+  background-color: #6b7280;
+  border-left: 2px dashed #6b7280;
 }
 
 .error-message {
@@ -413,15 +538,18 @@ export default defineComponent({
     font-size: 1.125rem;
   }
 
-  .segment {
-    padding: 12px;
+  .timeline-marker {
+    width: 28px;
+    height: 28px;
   }
 
-  .segment-title {
+  .station-info h4 {
     font-size: 0.9375rem;
   }
 
-  .segment-detail {
+  .arrival-time,
+  .segment-details,
+  .walking-info {
     font-size: 0.8125rem;
   }
 }

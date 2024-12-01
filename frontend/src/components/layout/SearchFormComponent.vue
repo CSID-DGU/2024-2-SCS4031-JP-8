@@ -269,7 +269,7 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 
 .search-form {
   font-family: 'Pretendard', sans-serif;
-  padding: 24px;
+  padding: 16px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -278,18 +278,20 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 
 .input-group {
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .input-group input {
   width: 100%;
-  padding: 14px 16px 14px 48px;
+  margin: 0;
+  padding: 12px 40px 12px 36px;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 14px;
   color: #1e293b;
   background: #f8fafc;
   transition: all 0.3s ease;
+  height: 44px;
 }
 
 .input-group input:focus {
@@ -304,10 +306,10 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 
 .input-icon {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #64748b;
+  color: #3b82f6;
   width: 20px;
   height: 20px;
 }
@@ -329,22 +331,23 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 }
 
 .switch-button-container {
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .switch-button {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background: #f1f5f9;
   border: none;
   border-radius: 12px;
   color: #1e293b;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  height: 44px;
 }
 
 .switch-button:hover {
@@ -365,9 +368,9 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   background: #3b82f6;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -380,8 +383,8 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 
 .realtime-icon {
   margin-right: 4px;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .modal {
@@ -392,26 +395,31 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background: white;
-  padding: 32px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 20px;
+  border-radius: 20px 20px 0 0;
+  width: 420px;
+  max-width: 100%;
+  margin: 0 auto;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modal-content h3 {
-  margin: 0 0 24px;
-  font-size: 24px;
+  margin: 0 0 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #1e293b;
+  text-align: center;
 }
 
 .time-selector {
@@ -424,94 +432,154 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 .time-picker .scrollable {
   max-height: 200px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .date-picker::-webkit-scrollbar,
 .time-picker .scrollable::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
 
-.date-picker::-webkit-scrollbar-track,
-.time-picker .scrollable::-webkit-scrollbar-track {
-  background: #f1f5f9;
+.date-picker {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
 }
 
-.date-picker::-webkit-scrollbar-thumb,
-.time-picker .scrollable::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+.date-picker button {
+  flex: 0 0 auto;
+  padding: 10px 15px;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
-}
-
-.date-picker button,
-.time-option {
-  width: 100%;
-  padding: 12px;
-  text-align: center;
-  background: none;
-  border: none;
-  cursor: pointer;
+  background: white;
+  font-size: 14px;
+  color: #1e293b;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
+.date-picker button:active,
+.meridiem-picker button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .date-picker button.selected,
-.time-option.selected {
-  background: #e0f2fe;
-  color: #3b82f6;
-  border-radius: 8px;
+.time-option.selected,
+.meridiem-picker button.selected {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .time-picker {
   display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.time-picker .scrollable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 120px; /* 3개의 항목이 보이도록 높이 조정 */
+  scroll-behavior: smooth;
+  position: relative;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.time-option {
+  padding: 8px;
+  font-size: 16px;
+  color: #1e293b;
+  height: 40px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+}
+
+.time-option.selected {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+}
+
+.time-option.selected::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  top: 0;
+  bottom: 0;
+  background-color: #3b82f6;
+  z-index: -1;
+  border-radius: 20px;
 }
 
 .time-separator {
   font-size: 24px;
   color: #64748b;
+  align-self: center;
 }
 
 .meridiem-picker {
   display: flex;
-  gap: 12px;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .meridiem-picker button {
-  flex: 1;
-  padding: 12px;
+  padding: 10px 20px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 20px;
   background: white;
   color: #1e293b;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
+.meridiem-picker button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .meridiem-picker button.selected {
-  background: #e0f2fe;
-  color: #3b82f6;
+  background: #3b82f6;
+  color: white;
   border-color: #3b82f6;
 }
 
 .modal-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  justify-content: space-between;
+  margin-top: 30px;
 }
 
 .modal-button {
   flex: 1;
-  padding: 14px;
+  padding: 15px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modal-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .modal-button.primary {
@@ -519,26 +587,19 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   color: white;
 }
 
-.modal-button.primary:hover {
-  background: #2563eb;
-}
-
 .modal-button.secondary {
   background: #f1f5f9;
   color: #1e293b;
 }
 
-.modal-button.secondary:hover {
-  background: #e2e8f0;
-}
-
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
+  transform: translateY(100%);
 }
 </style>

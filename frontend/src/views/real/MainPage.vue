@@ -4,24 +4,23 @@
       <header class="header">
         <div class="logo">
           <div class="logo-icon-container">
-            <FontAwesomeIcon icon="fa-solid fa-bus-alt" class="logo-icon" />
+            <Bus class="logo-icon" />
           </div>
           <h1 class="logo-text">또타자</h1>
         </div>
-        <SlidingMenu />
       </header>
       <SearchFormComponent />
       <div class="map-container" ref="mapContainer">
         <div class="map-controls">
           <button class="map-button zoom-in" @click="zoomIn">
-            <FontAwesomeIcon icon="fa-solid fa-plus" />
+            <Plus />
           </button>
           <button class="map-button zoom-out" @click="zoomOut">
-            <FontAwesomeIcon icon="fa-solid fa-minus" />
+            <Minus />
           </button>
         </div>
         <button class="location-button" @click="getLocation">
-          <FontAwesomeIcon icon="fa-solid fa-crosshairs" />
+          <Crosshair />
         </button>
       </div>
 
@@ -43,25 +42,17 @@ import SearchFormComponent from '@/components/layout/SearchFormComponent.vue'
 import { mapState, mapActions } from 'vuex'
 import SlidingMenu from '../SlidingMenu.vue'
 import Footer from '../Footer.vue'
-import { ArrowLeftIcon } from 'lucide-vue-next'
-import { library } from '@fortawesome/fontawesome-svg-core'
-import {
-  faPlus,
-  faMinus,
-  faCrosshairs,
-  faBusAlt
-} from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-
-library.add(faPlus, faMinus, faCrosshairs, faBusAlt)
+import { Bus, Plus, Minus, Crosshair } from 'lucide-vue-next'
 
 export default {
   components: {
     SearchFormComponent,
     SlidingMenu,
     Footer,
-    ArrowLeftIcon,
-    FontAwesomeIcon
+    Bus,
+    Plus,
+    Minus,
+    Crosshair
   },
   data() {
     return {
@@ -69,7 +60,8 @@ export default {
         latitude: 37.51347, // 기본 위치 (서울)
         longitude: 127.041722
       },
-      map: null
+      map: null,
+      showMenu: false
     }
   },
   computed: {
@@ -202,6 +194,7 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Gugi&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 .background {
@@ -224,13 +217,14 @@ export default {
 }
 
 .header {
-  background-color: #ffffff;
+  background-color: #f0f9ff;
   padding: 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 60px;
+  justify-content: center;
+  height: 70px;
   border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .logo {
@@ -247,10 +241,11 @@ export default {
   align-items: center;
   justify-content: center;
   margin-right: 12px;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .logo-icon {
-  font-size: 20px;
+  font-size: 24px;
   color: #ffffff;
 }
 
@@ -260,6 +255,7 @@ export default {
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.5px;
+  font-family: 'Gugi', cursive;
 }
 
 .map-container {
@@ -344,7 +340,7 @@ export default {
   }
 
   .logo-icon {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .logo-text {

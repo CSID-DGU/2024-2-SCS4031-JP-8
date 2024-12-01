@@ -269,44 +269,68 @@ export default {
 
 .map-controls {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 16px;
   z-index: 100;
 }
 
-.map-button {
-  width: 40px;
-  height: 40px;
+.map-button,
+.location-button {
+  width: 48px;
+  height: 48px;
   background-color: #ffffff;
-  color: #1e293b;
-  font-size: 20px;
+  color: #3b82f6;
   border: none;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-bottom: 10px;
+  transition: all 0.3s ease;
+}
+
+.map-button {
+  margin-bottom: 12px;
+}
+
+.map-button:hover,
+.location-button:hover {
+  background-color: #f0f9ff;
+  transform: scale(1.05);
+}
+
+.map-button:active,
+.location-button:active {
+  transform: scale(0.95);
+}
+
+.map-button svg,
+.location-button svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.5;
 }
 
 .location-button {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 40px;
-  height: 40px;
-  background-color: #ffffff;
-  color: #1e293b;
-  font-size: 20px;
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  top: 16px;
+  left: 16px;
   z-index: 100;
+}
+
+@media (max-width: 390px) {
+  .map-button,
+  .location-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .map-button svg,
+  .location-button svg {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 .search-button {
@@ -350,13 +374,6 @@ export default {
   .search-button {
     font-size: 14px;
     padding: 12px;
-  }
-
-  .location-button,
-  .map-button {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
   }
 }
 </style>

@@ -124,7 +124,6 @@ const initializeMap = () => {
   const ex = station.value.x
   const ey = station.value.y
 
-  // 지도 초기화
   const centerPoint = new naver.maps.LatLng((sy + ey) / 2, (sx + ex) / 2)
   const mapOptions = {
     center: centerPoint,
@@ -134,20 +133,27 @@ const initializeMap = () => {
   }
   const map = new naver.maps.Map('map', mapOptions)
 
-  // ODsay API로 경로 데이터 가져오기
   searchPubTransPath(map, sx, sy, ex, ey)
 }
 
 const searchPubTransPath = (map, sx, sy, ex, ey) => {
+  console.log('API 요청 파라미터:', { SX: sx, SY: sy, EX: ex, EY: ey })
+
   const url = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
   fetch(url)
     .then((response) => response.json())
     .then((data) => {
       if (data.result?.path?.[0]?.info?.mapObj) {
-        loadLane(map, data.result.path[0].info.mapObj, sx, sy, ex, ey)
+        const mapObj = data.result.path[0].info.mapObj
+        console.log('mapObj 데이터:', mapObj) // 디버깅 로그
+        loadLane(map, mapObj, sx, sy, ex, ey)
+      } else {
+        console.error('mapObj를 찾을 수 없습니다:', data)
       }
     })
-    .catch((error) => console.error('경로 검색 중 오류:', error))
+    .catch((error) => {
+      console.error('경로 검색 중 오류 발생:', error)
+    })
 }
 
 const loadLane = (map, mapObj, sx, sy, ex, ey) => {
@@ -155,20 +161,25 @@ const loadLane = (map, mapObj, sx, sy, ex, ey) => {
   fetch(url)
     .then((response) => response.json())
     .then((data) => {
-      drawMarkers(map, sx, sy, ex, ey)
-      drawPolyLines(map, data)
+      if (data.result?.lane) {
+        console.log('lane 데이터:', data.result.lane) // 디버깅 로그
+        drawMarkers(map, sx, sy, ex, ey)
+        drawPolyLines(map, data)
+      } else {
+        console.error('lane 데이터를 찾을 수 없습니다:', data)
+      }
     })
-    .catch((error) => console.error('경로 데이터 로드 중 오류:', error))
+    .catch((error) => {
+      console.error('경로 데이터 로드 중 오류 발생:', error)
+    })
 }
 
 const drawMarkers = (map, sx, sy, ex, ey) => {
-  // 출발지 마커
   new naver.maps.Marker({
     position: new naver.maps.LatLng(sy, sx),
     map: map
   })
 
-  // 도착지 마커
   new naver.maps.Marker({
     position: new naver.maps.LatLng(ey, ex),
     map: map
@@ -176,19 +187,31 @@ const drawMarkers = (map, sx, sy, ex, ey) => {
 }
 
 const drawPolyLines = (map, data) => {
+  if (!data.result?.lane) {
+    console.error('Polyline 데이터를 찾을 수 없습니다.')
+    return
+  }
+
   data.result.lane.forEach((lane) => {
     lane.section.forEach((section) => {
-      const lineArray = section.graphPos.map(
-        (pos) => new naver.maps.LatLng(pos.y, pos.x)
-      )
-      const color =
-        lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#42c700' : '#000000'
-      new naver.maps.Polyline({
-        map: map,
-        path: lineArray,
-        strokeWeight: 7,
-        strokeColor: color
-      })
+      if (section.graphPos?.length) {
+        const lineArray = section.graphPos.map(
+          (pos) => new naver.maps.LatLng(pos.y, pos.x)
+        )
+
+        const color =
+          lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#42c700' : '#000000'
+
+        new naver.maps.Polyline({
+          map: map,
+          path: lineArray,
+          strokeWeight: 7,
+          strokeColor: color,
+          strokeOpacity: 0.8
+        })
+      } else {
+        console.warn('graphPos 데이터가 누락되었습니다:', section)
+      }
     })
   })
 }
@@ -269,7 +292,6 @@ const getSegmentDetails = (segment) => {
 }
 
 onMounted(() => {
-  // 세션 스토리지에서 데이터 가져오기
   departure.value = JSON.parse(sessionStorage.getItem('departure'))
   station.value = JSON.parse(sessionStorage.getItem('station'))
   route.value = JSON.parse(sessionStorage.getItem('route'))

@@ -1,17 +1,37 @@
 <template>
-  <div class="route-bar">
-    <!-- 각 구간에 맞는 색상 및 레이블 출력 -->
-    <div
-      v-for="(segment, index) in route.subPath"
-      :key="index"
-      class="segment-bar"
-      :style="{
-        width: calculateBarWidth(segment) + '%',
-        backgroundColor: getSegmentColor(segment)
-      }"
-    >
-      <div class="segment-label">
-        {{ getSegmentLabel(segment) }}: {{ segmentSectionTime(segment) }}분
+  <div class="route-bar-container">
+    <div class="route-bar">
+      <div
+        v-for="(segment, index) in route.subPath"
+        :key="index"
+        class="segment-bar"
+        :style="{
+          width: calculateBarWidth(segment) + '%',
+          backgroundColor: getSegmentColor(segment)
+        }"
+      >
+        <div class="segment-label-container">
+          <div class="segment-label">
+            {{ getSegmentLabel(segment) }}
+          </div>
+          <div class="segment-time">{{ segmentSectionTime(segment) }}분</div>
+        </div>
+      </div>
+    </div>
+    <div class="segment-details">
+      <div
+        v-for="(segment, index) in route.subPath"
+        :key="index"
+        class="segment-detail"
+        :style="{ color: getSegmentColor(segment) }"
+      >
+        <div class="segment-icon">
+          {{ getSegmentIcon(segment) }}
+        </div>
+        <div class="segment-info">
+          <div class="segment-label">{{ getSegmentLabel(segment) }}</div>
+          <div class="segment-time">{{ segmentSectionTime(segment) }}분</div>
+        </div>
       </div>
     </div>
   </div>
@@ -24,38 +44,25 @@ const props = defineProps({
   route: Object
 })
 
-// 각 구간의 소요 시간을 %로 환산하여 막대 너비 결정
 const calculateBarWidth = (segment) => {
-  const totalTime = props.route.info?.totalTime || 1 // 방어 코드로 기본값 설정
+  const totalTime = props.route.info?.totalTime || 1
   const segmentTime = segmentSectionTime(segment)
   return (segmentTime / totalTime) * 100
 }
 
-// 구간에 따른 색상 반환
 const getSegmentColor = (segment) => {
-  console.log('Segment:', segment) // segment 데이터 구조 확인
-
   if (segment.trafficType === 1) {
-    // 지하철 구간 색상
     const subwayCode = segment?.lane?.[0]?.subwayCode
-    console.log('Subway Code:', subwayCode) // subwayCode 확인
-
-    return getSubwayColor(subwayCode) || '#CCCCCC' // 기본값 설정
+    return getSubwayColor(subwayCode) || '#CCCCCC'
   }
   if (segment.trafficType === 2) {
-    // 버스 구간 색상
     const busRouteType = segment?.lane?.[0]?.type
-    const busNo = segment?.lane?.[0]?.busNo // 버스 번호도 사용
-    console.log('Bus Route Type:', busRouteType, 'Bus No:', busNo)
-
-    // 버스 타입에 맞는 색상 반환
-    return getBusRouteColor(busRouteType) || '#CCCCCC' // 기본값 설정
+    return getBusRouteColor(busRouteType) || '#CCCCCC'
   }
-  if (segment.trafficType === 3) return '#B0B0B0' // 도보 구간 색상
-  return '#CCCCCC' // 기본값
+  if (segment.trafficType === 3) return '#B0B0B0'
+  return '#CCCCCC'
 }
 
-// 구간에 따른 레이블 설정
 const getSegmentLabel = (segment) => {
   if (segment.trafficType === 3) return '도보'
   if (segment.trafficType === 2) {
@@ -69,19 +76,29 @@ const getSegmentLabel = (segment) => {
   return '기타'
 }
 
-// 구간의 소요 시간
+const getSegmentIcon = (segment) => {
+  if (segment.trafficType === 3) return '🚶'
+  if (segment.trafficType === 2) return '🚌'
+  if (segment.trafficType === 1) return '🚇'
+  return '🔄'
+}
+
 const segmentSectionTime = (segment) => {
   return segment.sectionTime || 0
 }
 </script>
 
 <style scoped>
+.route-bar-container {
+  margin: 10px 0;
+}
+
 .route-bar {
   display: flex;
-  height: 30px;
-  margin: 20px 0;
-  border-radius: 15px;
+  height: 20px;
+  border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .segment-bar {
@@ -89,8 +106,77 @@ const segmentSectionTime = (segment) => {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
-  padding: 5px;
+  font-size: 10px;
+  padding: 2px;
   height: 100%;
+  transition: all 0.3s ease;
+}
+
+.segment-bar:hover {
+  transform: scaleY(1.1);
+}
+
+.segment-label-container {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+.segment-bar:hover .segment-label-container {
+  display: flex;
+}
+
+.segment-label {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.segment-time {
+  font-size: 8px;
+}
+
+.segment-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.segment-detail {
+  display: flex;
+  align-items: center;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.segment-detail:hover {
+  transform: translateY(-1px);
+}
+
+.segment-icon {
+  font-size: 14px;
+  margin-right: 3px;
+}
+
+.segment-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.segment-info .segment-label {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.segment-info .segment-time {
+  font-size: 8px;
 }
 </style>

@@ -511,13 +511,20 @@ export default {
           '조건에 맞는 모든 노선 (중복 제거 후):',
           filteredRoutes.value
         )
-
+        // 여기에 새로운 조건 추가
+        if (filteredRoutes.value.length === 0) {
+          // 제공하는 버스 노선이 없으면 '/nobusroute'로 라우팅
+          router.push('/nobusroute')
+          return
+        }
         // 첫 번째 버스 노선 자동 선택
         if (filteredRoutes.value.length > 0) {
           await selectBusRoute(filteredRoutes.value[0])
         }
       } catch (error) {
         console.error('API 호출 중 오류 발생:', error)
+        // 에러 발생 시에도 '/nobusroute'로 라우팅
+        router.push('/nobusroute')
       } finally {
         loading.value = false
       }

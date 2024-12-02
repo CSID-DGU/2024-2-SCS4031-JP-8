@@ -187,6 +187,31 @@ export default {
       }
     }
   },
+  createMarkerIcon(color) {
+    const canvas = document.createElement('canvas')
+    canvas.width = 32
+    canvas.height = 32
+    const ctx = canvas.getContext('2d')
+
+    // Draw a circle
+    ctx.beginPath()
+    ctx.arc(16, 16, 12, 0, 2 * Math.PI)
+    ctx.fillStyle = color
+    ctx.fill()
+
+    // Draw a border
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 3
+    ctx.stroke()
+
+    // Draw a small inner circle
+    ctx.beginPath()
+    ctx.arc(16, 16, 4, 0, 2 * Math.PI)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
+
+    return canvas.toDataURL()
+  },
   mounted() {
     this.getLocation() // 컴포넌트가 마운트되면 위치 요청
   }

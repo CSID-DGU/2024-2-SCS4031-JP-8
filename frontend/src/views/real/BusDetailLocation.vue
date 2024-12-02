@@ -195,14 +195,14 @@
                   <p class="seats-info">
                     잔여 {{ stop.busInfo.remainSeatCnt }}석
                   </p>
-                  <p
-                    v-if="stop.busInfo && stop.busInfo.lowPlate === 1"
-                    class="low-bus-text"
-                  >
-                    저상버스
-                  </p>
                 </div>
               </div>
+              <p
+                v-if="stop.busInfo && stop.busInfo.lowPlate === 1"
+                class="low-bus-text"
+              >
+                저상버스
+              </p>
             </div>
           </div>
         </div>
@@ -235,7 +235,9 @@ export default {
       localBusID: null,
       map: null,
       hasBusInfo: false,
-      currentDirection: 'up'
+      currentDirection: 'up',
+      busMarkers: [],
+      updateInterval: null
     }
   },
   computed: {
@@ -249,12 +251,15 @@ export default {
   },
   methods: {
     getBusInfo(stop, index) {
+      console.log(
+        `[DEBUG] GetBusInfo called for stop: ${stop.stationName}, index: ${index}`
+      )
       if (stop.busInfo) {
         return {
           plateNo: stop.busInfo.plateNo,
           seats: stop.busInfo.remainSeatCnt,
-          lowPlate: stop.busInfo.lowPlate, // 저상버스 여부
-          flag: stop.busInfo.flag // 운행 상태
+          lowPlate: stop.busInfo.lowPlate,
+          flag: stop.busInfo.flag
         }
       }
       if (index === 0 && !this.hasBusInfo) {
@@ -273,6 +278,7 @@ export default {
       }
     },
     getBusFlag(flag) {
+      console.log(`[DEBUG] GetBusFlag called for flag: ${flag}`)
       const flagDescriptions = {
         RUN: '운행중',
         PASS: '운행중',
@@ -282,6 +288,7 @@ export default {
       return flagDescriptions[flag] || '정보없음'
     },
     initMap() {
+      console.log('[DEBUG] Initializing map...')
       if (typeof naver === 'undefined' || !naver.maps) {
         console.error('Naver Maps API is not loaded')
         return
@@ -296,8 +303,10 @@ export default {
         mapDataControl: false,
         mapTypeControl: false
       })
+      console.log('[DEBUG] Map initialized successfully.')
     },
     displayRoute() {
+      console.log('[DEBUG] DisplayRoute called.')
       if (!this.busStops.length) return
 
       const path = this.busStops.map(
@@ -321,8 +330,12 @@ export default {
       const bounds = new naver.maps.LatLngBounds()
       path.forEach((point) => bounds.extend(point))
       this.map.fitBounds(bounds)
+      console.log('[DEBUG] Route displayed on map.')
     },
     scrollToDirection(direction) {
+      console.log(
+        `[DEBUG] ScrollToDirection called for direction: ${direction}`
+      )
       this.currentDirection = direction
       const targetStop =
         direction === 'up'
@@ -336,16 +349,19 @@ export default {
       }
     },
     zoomIn() {
+      console.log('[DEBUG] ZoomIn called.')
       if (this.map) {
         this.map.setZoom(this.map.getZoom() + 1)
       }
     },
     zoomOut() {
+      console.log('[DEBUG] ZoomOut called.')
       if (this.map) {
         this.map.setZoom(this.map.getZoom() - 1)
       }
     },
     getBusType(type) {
+      console.log(`[DEBUG] GetBusType called for type: ${type}`)
       const types = {
         1: '공항버스',
         2: '마을버스',
@@ -362,6 +378,7 @@ export default {
     },
     async fetchBusRouteInfo() {
       try {
+        console.log('[DEBUG] FetchBusRouteInfo started.')
         const routeResponse = await axios.get(
           'https://api.odsay.com/v1/api/searchBusLane',
           {
@@ -371,9 +388,11 @@ export default {
             }
           }
         )
+        console.log('[DEBUG] Route response received:', routeResponse.data)
 
         const selectedBus = routeResponse.data.result.lane[0]
         this.localBusID = selectedBus.localBusID
+        console.log(`[DEBUG] Selected bus localBusID: ${this.localBusID}`)
 
         const infoResponse = await axios.get(
           'https://api.odsay.com/v1/api/busLaneDetail',
@@ -384,6 +403,7 @@ export default {
             }
           }
         )
+        console.log('[DEBUG] Bus info response received:', infoResponse.data)
 
         const busInfo = infoResponse.data.result
         this.busInfo = {
@@ -400,6 +420,7 @@ export default {
           busCompanyNameKor: busInfo.busCompanyNameKor,
           direction: busInfo.directionDescription || '상행'
         }
+        console.log('[DEBUG] Updated busInfo:', this.busInfo)
 
         this.busStops = busInfo.station.map((stop) => ({
           stationName: stop.stationName,
@@ -411,25 +432,136 @@ export default {
           busOnlyCentralLane: stop.busOnlyCentralLane,
           busInfo: null
         }))
+        console.log('[DEBUG] Updated busStops:', this.busStops)
 
         this.displayRoute()
+
+        // Fetch real-time bus location information
+        await this.fetchBusLocations()
       } catch (error) {
-        console.error('API 호출 중 오류 발생:', error)
+        console.error('[DEBUG] Error in FetchBusRouteInfo:', error)
+      }
+    },
+    async fetchBusLocations() {
+      try {
+        console.log('[DEBUG] FetchBusLocations started.')
+        const params = {
+          serviceKey:
+            'EVTsGjdsoUlBtJTpdh/itgFJXzeeNK/BP4lN8my+i9AaoLGNln1kqRcyVP7CVRY8GsiXkX+OMl2HviEvq6hlfQ==',
+          routeId: this.localBusID
+        }
+        console.log('[DEBUG] Gyeonggi Bus API Parameters:', params)
+
+        const gyeonggiBusResponse = await axios.get(
+          'http://apis.data.go.kr/6410000/buslocationservice/getBusLocationList',
+          { params }
+        )
+        console.log(
+          '[DEBUG] Gyeonggi Bus response received:',
+          gyeonggiBusResponse.data
+        )
+
+        const busLocations = this.parseXML(gyeonggiBusResponse.data)
+        console.log('[DEBUG] Parsed bus locations:', busLocations)
+
+        busLocations.forEach((bus) => {
+          const matchedStop = this.busStops.find(
+            (stop) => stop.localStationID === bus.stationId
+          )
+          if (matchedStop) {
+            matchedStop.busInfo = {
+              plateNo: bus.plateNo,
+              plateType: bus.plateType,
+              remainSeatCnt: bus.remainSeatCnt,
+              lowPlate: bus.lowPlate === '1' ? 1 : 0,
+              flag: bus.flag
+            }
+            this.hasBusInfo = true
+            console.log('[DEBUG] Updated busInfo for stop:', matchedStop)
+          }
+        })
+
+        // Update bus markers on the map
+        this.updateBusMarkers(busLocations)
+      } catch (error) {
+        console.error('[DEBUG] Error in FetchBusLocations:', error)
+      }
+    },
+    parseXML(xmlData) {
+      console.log('[DEBUG] Parsing XML data.')
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(xmlData, 'text/xml')
+      const busLocationList = Array.from(
+        xmlDoc.getElementsByTagName('busLocationList')
+      )
+      const parsedData = busLocationList.map((bus) => ({
+        stationId: bus.getElementsByTagName('stationId')[0]?.textContent,
+        plateNo: bus.getElementsByTagName('plateNo')[0]?.textContent,
+        plateType: bus.getElementsByTagName('plateType')[0]?.textContent,
+        remainSeatCnt:
+          bus.getElementsByTagName('remainSeatCnt')[0]?.textContent,
+        lowPlate: bus.getElementsByTagName('lowPlate')[0]?.textContent,
+        lat: parseFloat(bus.getElementsByTagName('lat')[0]?.textContent),
+        lng: parseFloat(bus.getElementsByTagName('lng')[0]?.textContent)
+      }))
+      console.log('[DEBUG] Parsed XML data:', parsedData)
+      return parsedData
+    },
+    updateBusMarkers(busLocations) {
+      console.log('[DEBUG] Updating bus markers on the map.')
+      // Remove existing bus markers
+      if (this.busMarkers) {
+        this.busMarkers.forEach((marker) => marker.setMap(null))
+      }
+      this.busMarkers = []
+
+      // Add new bus markers
+      busLocations.forEach((bus) => {
+        const marker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(bus.lat, bus.lng),
+          map: this.map,
+          icon: {
+            content: `<div class="bus-marker">${bus.plateNo}</div>`,
+            size: new naver.maps.Size(30, 30),
+            anchor: new naver.maps.Point(15, 15)
+          }
+        })
+        this.busMarkers.push(marker)
+      })
+      console.log('[DEBUG] Bus markers updated:', this.busMarkers)
+    },
+    startRealTimeUpdates() {
+      console.log('[DEBUG] Starting real-time updates.')
+      // Update bus locations every 30 seconds
+      this.updateInterval = setInterval(() => {
+        this.fetchBusLocations()
+      }, 30000)
+    },
+    stopRealTimeUpdates() {
+      console.log('[DEBUG] Stopping real-time updates.')
+      if (this.updateInterval) {
+        clearInterval(this.updateInterval)
       }
     }
   },
   async mounted() {
     try {
+      console.log('[DEBUG] Component mounted. Initializing...')
       this.initMap()
       if (!this.map) {
-        console.error('Map initialization failed')
+        console.error('[DEBUG] Map initialization failed.')
         return
       }
 
       await this.fetchBusRouteInfo()
+      this.startRealTimeUpdates()
     } catch (error) {
-      console.error('컴포넌트 마운트 중 오류 발생:', error)
+      console.error('[DEBUG] Error in mounted:', error)
     }
+  },
+  beforeDestroy() {
+    console.log('[DEBUG] Component is being destroyed.')
+    this.stopRealTimeUpdates()
   }
 }
 </script>
@@ -605,8 +737,7 @@ export default {
 .stops-list {
   background: white;
   border-radius: 20px 20px 0 0;
-  padding: 20px 40px; /* 좌우 padding을 24px로 설정 */
-
+  padding: 20px 40px;
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -745,5 +876,25 @@ export default {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.low-bus-text {
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.bus-marker {
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
 }
 </style>

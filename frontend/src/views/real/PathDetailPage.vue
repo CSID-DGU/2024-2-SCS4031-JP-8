@@ -86,7 +86,13 @@
           </div>
         </div>
       </div>
+      <!-- 미니 지도 -->
+      <div class="mini-map-container">
+        <h4 class="mini-map-title">도착지 지도</h4>
+        <div id="mini-map" class="mini-map"></div>
+      </div>
     </div>
+
     <div v-else class="error-message">
       <h3>세부 경로 정보를 불러올 수 없습니다.</h3>
       <p>출발지, 정류장 또는 경로 데이터가 없습니다.</p>
@@ -292,6 +298,56 @@ const drawMarkers = (map, sx, sy, ex, ey) => {
 
   console.log('[DEBUG] 출발지 및 도착지 마커 추가 완료')
 }
+
+// 미니 지도 초기화 함수
+const initializeMiniMap = () => {
+  const ex = parseFloat(station.value?.x)
+  const ey = parseFloat(station.value?.y)
+
+  if (!ex || !ey) {
+    console.error('[ERROR] 미니 지도 초기화에 필요한 좌표가 없습니다.')
+    return
+  }
+
+  console.log('[DEBUG] initializeMiniMap 호출')
+
+  const map = new naver.maps.Map('mini-map', {
+    center: new naver.maps.LatLng(ey, ex),
+    zoom: 15,
+    mapTypeControl: false,
+    zoomControl: false
+  })
+
+  // 도착지 마커 추가
+  new naver.maps.Marker({
+    position: new naver.maps.LatLng(ey, ex),
+    map: map,
+    icon: {
+      content: `
+        <div style="
+          width: 30px;
+          height: 30px;
+          background-color: #F44336;
+          border: 3px solid #FFFFFF;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #FFFFFF;
+          font-weight: bold;
+          font-size: 12px;
+        ">
+          도착
+        </div>
+      `,
+      size: new naver.maps.Size(30, 30),
+      anchor: new naver.maps.Point(15, 15)
+    }
+  })
+
+  console.log('[DEBUG] 미니 지도 생성 완료')
+}
 // 경로에 폴리라인 추가 (전 페이지에서 받은 경로 데이터 사용)
 const drawPolyLines = (map, route) => {
   console.log('[DEBUG] drawPolyLines 호출')
@@ -435,6 +491,7 @@ onMounted(() => {
   if (departure.value && station.value && route.value) {
     nextTick(() => {
       initializeMap()
+      initializeMiniMap() // 미니 지도 초기화
     })
   } else {
     console.error('[ERROR] 필수 데이터가 없습니다.')
@@ -743,5 +800,26 @@ onMounted(() => {
   color: #f44336;
   font-weight: bold;
   font-size: 16px;
+}
+.mini-map-container {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.mini-map-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.mini-map {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 </style>

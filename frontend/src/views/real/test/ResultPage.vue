@@ -60,6 +60,9 @@
             v-for="route in filteredRoutes"
             :key="`${route.busNo}-${route.directionText}`"
             @click="selectBusRoute(route)"
+            :class="{
+              selected: selectedRoute && selectedRoute.busNo === route.busNo
+            }"
             class="route-item"
           >
             {{ route.busNo }}
@@ -96,6 +99,13 @@
             거리순
           </button>
         </div>
+        <div class="recommendation-title">
+          {{
+            isRealTimeData
+              ? '실시간 여석 기반 추천 정류장'
+              : '예측된 재차인원 기반 추천 정류장'
+          }}
+        </div>
         <div class="stations-list">
           <div
             v-for="(station, index) in sortedStations"
@@ -104,6 +114,7 @@
             :class="{
               'high-probability': isHighProbability(station.idx),
               'low-probability': !isHighProbability(station.idx),
+              recommended: isHighestProbability(station.idx),
               first: index === 0,
               last: index === sortedStations.length - 1
             }"
@@ -114,7 +125,14 @@
             </div>
             <div class="station-content">
               <div class="station-header">
-                <h4 class="station-name">{{ station.stationName }}</h4>
+                <h4 class="station-name">
+                  {{ station.stationName }}
+                  <span
+                    v-if="isHighestProbability(station.idx)"
+                    class="recommendation-badge"
+                    >추천</span
+                  >
+                </h4>
                 <div class="station-probability">
                   <svg
                     v-if="isHighProbability(station.idx)"
@@ -263,13 +281,15 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import apiConfig from '@/utils/API/apiConfig'
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
+import { busRouteData } from './busData'
 import { calculateBoardingProbability } from './poisson'
-import { useRouter } from 'vue-router'
 
 export default {
   setup() {
@@ -279,15 +299,46 @@ export default {
     const fromLocation = computed(() => store.state.departure.departure.name)
     const toLocation = computed(() => store.state.destination.destination.name)
     const loading = ref(false)
+    const providedRouteExists = ref(false)
     const filteredRoutes = ref([])
     const selectedRoute = ref(null)
     const filteredStations = ref([])
     const selectedStations = ref([])
+    const arrivalInfo = ref(null)
+    const routeId = ref(null)
+    const filePath = ref('')
+    const timeSlot = ref('')
+    const busBasicInfo = ref({})
     const map = ref(null)
+    const markers = ref([])
     const currentSort = ref('probability')
+    const currentPosition = ref(null)
+    const lastFetchTime = ref(new Date())
+    const isRealTimeData = computed(() => {
+      return new Date().getTime() - lastFetchTime.value.getTime() < 60000 // 1분 이내
+    })
 
-    const goBack = () => {
-      router.go(-1)
+    const timeInfo = computed(() => store.getters['time/getTime'])
+
+    const directionText = (direction) => (direction === 'up' ? '상행' : '하행')
+
+    const checkTimeRange = (busNo) => {
+      const { hour, minute } = timeInfo.value
+      const parsedHour = parseInt(hour, 10)
+      const parsedMinute = parseInt(minute, 10)
+      const currentTime = parsedHour * 60 + parsedMinute
+
+      if (busNo === '5000' || busNo === '1112' || busNo === '6001') {
+        return true
+      } else if (busNo === '5000A') {
+        return currentTime >= 300 && currentTime < 900
+      } else if (busNo === '5000B') {
+        return (
+          (currentTime >= 725 && currentTime < 1440) ||
+          (currentTime >= 0 && currentTime < 180)
+        )
+      }
+      return false
     }
 
     const searchTransitRoutes = async () => {
@@ -299,10 +350,11 @@ export default {
         const endY = store.state.destination.destination.coordinates?.y
 
         if (!startX || !startY || !endX || !endY) {
-          alert('출발지와 도착지의 위치를 확인해주세요.')
+          alert('출발지와 도착지의 위치를 먼저 설정해주세요.')
           return
         }
 
+        console.log('API 호출 시작:', { startX, startY, endX, endY })
         const response = await axios.get(
           'https://api.odsay.com/v1/api/searchPubTransPathT',
           {
@@ -311,7 +363,7 @@ export default {
               SY: startY,
               EX: endX,
               EY: endY,
-              apiKey: 'dWY4QsIARSUXfD8U1ZdSig'
+              apiKey: apiConfig.odsayApiKey
             }
           }
         )
@@ -320,23 +372,56 @@ export default {
         const routeOptions = ['5000', '5000A', '5000B', '1112', '6001']
         const allRoutes = []
 
-        paths.forEach((route) => {
-          route.subPath.forEach((segment) => {
+        for (const route of paths) {
+          for (const segment of route.subPath) {
             if (segment.trafficType === 2) {
-              segment.lane.forEach((lane) => {
-                if (routeOptions.includes(lane.busNo)) {
-                  allRoutes.push({
-                    busNo: lane.busNo,
-                    directionText:
-                      segment.stationDirection === 2 ? '상행' : '하행',
-                    stationID: segment.startID,
-                    stationName: segment.startName
-                  })
+              for (const lane of segment.lane) {
+                const busNo = lane.busNo
+                if (routeOptions.includes(busNo) && checkTimeRange(busNo)) {
+                  console.log(`조건에 맞는 버스 번호 - ${busNo}`)
+                  try {
+                    const stationDetailResponse = await axios.get(
+                      'https://api.odsay.com/v1/api/busLaneDetail',
+                      {
+                        params: {
+                          busID: lane.busID,
+                          apiKey: apiConfig.odsayApiKey
+                        }
+                      }
+                    )
+
+                    const stations =
+                      stationDetailResponse.data.result.station || []
+                    const targetStation = stations.find(
+                      (station) => station.stationID === segment.startID
+                    )
+                    const direction =
+                      targetStation?.stationDirection === 2 ? 'up' : 'down'
+                    console.log(
+                      `상행/하행 판별: ${busNo}, 방향: ${direction}, 정류장 이름: ${segment.startName}`
+                    )
+
+                    allRoutes.push({
+                      busNo: busNo,
+                      directionText: directionText(direction),
+                      stationID: segment.startID,
+                      stationName: segment.startName,
+                      firstStation: {
+                        name: stations[0]?.stationName,
+                        id: stations[0]?.stationID,
+                        direction: directionText(
+                          stations[0]?.stationDirection === 2 ? 'up' : 'down'
+                        )
+                      }
+                    })
+                  } catch (error) {
+                    console.error(`busLaneDetail API 호출 오류 발생: ${error}`)
+                  }
                 }
-              })
+              }
             }
-          })
-        })
+          }
+        }
 
         filteredRoutes.value = allRoutes.reduce((acc, current) => {
           const duplicate = acc.find(
@@ -344,15 +429,24 @@ export default {
               route.busNo === current.busNo &&
               route.directionText === current.directionText
           )
-          if (!duplicate) acc.push(current)
+          if (!duplicate) {
+            acc.push(current)
+          }
           return acc
         }, [])
 
+        providedRouteExists.value = filteredRoutes.value.length > 0
+        console.log(
+          '조건에 맞는 모든 노선 (중복 제거 후):',
+          filteredRoutes.value
+        )
+
+        // 첫 번째 버스 노선 자동 선택
         if (filteredRoutes.value.length > 0) {
-          selectBusRoute(filteredRoutes.value[0])
+          await selectBusRoute(filteredRoutes.value[0])
         }
       } catch (error) {
-        console.error('노선 검색 오류:', error)
+        console.error('API 호출 중 오류 발생:', error)
       } finally {
         loading.value = false
       }
@@ -360,62 +454,125 @@ export default {
 
     const selectBusRoute = async (route) => {
       selectedRoute.value = route
-      try {
-        const busData = await fetchBusRouteDetails(route.busNo)
-        filteredStations.value = busData.station.slice(0, 5)
+      console.log('다음 페이지로 전달되는 정보:', {
+        busNo: route.busNo,
+        direction: route.directionText,
+        stationID: route.stationID,
+        stationName: route.stationName,
+        fromLocation: fromLocation.value,
+        toLocation: toLocation.value,
+        startX: store.state.departure.departure.coordinates?.x,
+        startY: store.state.departure.departure.coordinates?.y,
+        endX: store.state.destination.destination.coordinates?.x,
+        endY: store.state.destination.destination.coordinates?.y,
+        month: store.state.time.month,
+        day: store.state.time.day,
+        hour: store.state.time.hour,
+        minute: store.state.time.minute,
+        firstStationName: route.firstStation.name,
+        firstStationID: route.firstStation.id,
+        firstStationDirection: route.firstStation.direction
+      })
 
-        initializeMap(busData.station)
+      try {
+        console.log('[INFO] 버스 노선 상세 API 호출 중...')
+        const busData = await fetchBusRouteDetails(route.busNo)
+        console.log('[INFO] 버스 노선 상세 API 응답:', busData)
+
+        busBasicInfo.value = {
+          busStartPoint: busData?.busStartPoint,
+          busEndPoint: busData?.busEndPoint,
+          busFirstTime: busData?.busFirstTime,
+          busLastTime: busData?.busLastTime,
+          bus_Interval_Week: busData?.bus_Interval_Week,
+          bus_Interval_Sat: busData?.bus_Interval_Sat,
+          bus_Interval_Sun: busData?.bus_Interval_Sun
+        }
+
+        routeId.value = busRouteData[route.busNo]?.routeId
+        if (!routeId.value) {
+          console.error(
+            `[ERROR] routeId를 찾을 수 없습니다. 노선 번호: ${route.busNo}`
+          )
+          return
+        }
+
+        const directionCode = route.directionText === '상행' ? 2 : 1
+        console.log('[DEBUG] directionCode:', directionCode)
+
+        const stations = busData.station
+          .map((station, index, fullList) => {
+            const nonStopCount = fullList
+              .slice(0, index)
+              .filter((prevStation) => prevStation.nonstopStation === 1).length
+            return {
+              ...station,
+              idx: station.idx - nonStopCount
+            }
+          })
+          .filter(
+            (station) =>
+              station.stationDirection === directionCode &&
+              station.nonstopStation === 0
+          )
+
+        console.log('[INFO] 필터링된 정류장 데이터:', stations)
+
+        filteredStations.value = stations.slice(0, 5)
 
         const firstStation = filteredStations.value[0]
         if (firstStation) {
-          const arrivalInfo = await fetchBusArrivalInfo(
+          console.log('[INFO] 첫 정류장:', firstStation)
+
+          const arrivalData = await fetchBusArrivalInfo(
             firstStation.localStationID,
             route.busNo,
-            store.getters['time/getTime']
+            timeInfo.value
           )
-          const filePath = `/csv/${route.busNo}/passengers/${
-            route.busNo
-          }_${getDayType()}.csv`
+          arrivalInfo.value = arrivalData
+          lastFetchTime.value = new Date()
+
+          console.log('[INFO] 실시간 도착 정보:', arrivalInfo.value)
+
+          await setFilePath(route.busNo)
+          timeSlot.value = `${timeInfo.value.hour}시`
+
+          console.log('[INFO] CSV 파일 경로:', filePath.value)
+          console.log('[INFO] 시간대 정보:', timeSlot.value)
+
+          const endSeq =
+            filteredStations.value[filteredStations.value.length - 1]?.idx
+          if (!endSeq) {
+            console.error(
+              '[ERROR] endSeq를 찾을 수 없습니다. filteredStations가 비어있습니다.'
+            )
+            return
+          }
+
+          console.log('[INFO] 마지막 정류장 순번:', endSeq)
 
           selectedStations.value = await calculateBoardingProbability({
-            arrivalInfo: arrivalInfo.firstBus?.remainSeats || 0,
+            arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
             startSeq: filteredStations.value[0]?.idx,
-            endSeq:
-              filteredStations.value[filteredStations.value.length - 1]?.idx,
-            filePath,
-            timeSlot: `${store.getters['time/getTime'].hour}시`,
-            stations: busData.station
+            endSeq,
+            filePath: filePath.value,
+            timeSlot: timeSlot.value,
+            stations
           })
-        }
 
-        await fetchBusArrivalForStations()
+          console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
+
+          // 지도 초기화 및 마커 추가
+          await nextTick()
+          initializeMap()
+        }
       } catch (error) {
         console.error('노선 선택 오류:', error)
       }
     }
 
-    const fetchBusArrivalForStations = async () => {
-      for (const station of filteredStations.value) {
-        try {
-          const arrivalInfo = await fetchBusArrivalInfo(
-            station.stationId,
-            selectedRoute.value.busNo
-          )
-          station.arrivalInfo = arrivalInfo
-        } catch (error) {
-          console.error(
-            `정류장 ${station.stationName}의 도착 정보 조회 오류:`,
-            error
-          )
-        }
-      }
-    }
-
     const initializeMap = () => {
-      if (!filteredStations.value || filteredStations.value.length === 0) {
-        console.error('지도 초기화 실패: 필터링된 정류장 데이터가 없습니다.')
-        return
-      }
+      if (!filteredStations.value.length) return
 
       const firstStation = filteredStations.value[0]
       const lastStation =
@@ -423,100 +580,131 @@ export default {
 
       const mapOptions = {
         center: new naver.maps.LatLng(
-          (firstStation.y + lastStation.y) / 2,
-          (firstStation.x + lastStation.x) / 2
+          (parseFloat(firstStation.y) + parseFloat(lastStation.y)) / 2,
+          (parseFloat(firstStation.x) + parseFloat(lastStation.x)) / 2
         ),
-        zoom: 15,
-        zoomControl: true,
-        zoomControlOptions: {
-          style: naver.maps.ZoomControlStyle.SMALL,
-          position: naver.maps.Position.TOP_RIGHT
-        }
+        zoom: 13,
+        zoomControl: false,
+        zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
       }
 
       map.value = new naver.maps.Map('map', mapOptions)
 
-      // Custom zoom control styles
-      const customControl = new naver.maps.CustomControl(createZoomControl(), {
-        position: naver.maps.Position.TOP_RIGHT
-      })
+      // 현재 위치 마커 추가
+      if (currentPosition.value) {
+        const currentPositionMarker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(
+            currentPosition.value.lat,
+            currentPosition.value.lng
+          ),
+          map: map.value,
+          icon: {
+            content: `
+              <div style="
+                background: #4285F4;
+                border: 2px solid #FFF;
+                border-radius: 50%;
+                width: 16px;
+                height: 16px;
+                box-shadow: 0 0 5px rgba(0,0,0,0.3);
+              "></div>
+            `,
+            anchor: new naver.maps.Point(8, 8)
+          }
+        })
+        markers.value.push(currentPositionMarker)
+      }
 
-      customControl.setMap(map.value)
+      // 출발지 마커 추가
+      const departureCoords = store.state.departure.departure.coordinates
+      if (departureCoords) {
+        const departureMarker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(departureCoords.y, departureCoords.x),
+          map: map.value,
+          icon: {
+            content: `
+              <div style="
+                background: #FF5722;
+                color: #fff;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 12px;
+              ">출발</div>
+            `,
+            anchor: new naver.maps.Point(30, 15)
+          }
+        })
+        markers.value.push(departureMarker)
+      }
 
+      // 기존 마커 제거
+      markers.value.forEach((marker) => marker.setMap(null))
+      markers.value = []
+
+      // 새 마커 추가 및 라인 그리기
       const path = []
-      filteredStations.value.forEach((station) => {
+      filteredStations.value.forEach((station, index) => {
         const position = new naver.maps.LatLng(station.y, station.x)
         path.push(position)
 
-        new naver.maps.Marker({
-          position,
+        const markerColor =
+          index === 0
+            ? '#007aff'
+            : index === filteredStations.value.length - 1
+            ? '#ff0000'
+            : '#4CAF50'
+
+        const marker = new naver.maps.Marker({
+          position: position,
           map: map.value,
-          title: station.stationName,
           icon: {
             content: `
-              <div style="background: #007aff; color: #fff; padding: 5px 10px; border-radius: 5px; position: relative; text-align: center; font-size: 12px;">
-                ${station.stationName}
-                <div style="position: absolute; bottom: -6px; left: 0px; width: 0; height: 7; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #007aff;"></div>
+              <div style="
+                background: ${markerColor};
+                color: #fff;
+                padding: 10px;
+                border-radius: 50%;
+                font-weight: bold;
+                font-size: 14px;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              ">
+                ${index + 1}
               </div>
             `,
-            anchor: new naver.maps.Point(12, 20)
+            anchor: new naver.maps.Point(15, 15)
           }
         })
+
+        // 정류장 이름 표시
+        new naver.maps.InfoWindow({
+          content: `<div style="padding: 5px;">${station.stationName}</div>`,
+          position: position,
+          map: map.value
+        })
+
+        markers.value.push(marker)
       })
 
+      // 정류장을 연결하는 라인 그리기
       new naver.maps.Polyline({
         map: map.value,
-        path,
-        strokeWeight: 4,
-        strokeColor: '#FF7F00',
+        path: path,
+        strokeColor: '#007aff',
+        strokeWeight: 3,
         strokeOpacity: 0.8
       })
 
       const bounds = new naver.maps.LatLngBounds()
-      bounds.extend(new naver.maps.LatLng(firstStation.y, firstStation.x))
-      bounds.extend(new naver.maps.LatLng(lastStation.y, lastStation.x))
-
+      filteredStations.value.forEach((station) => {
+        bounds.extend(new naver.maps.LatLng(station.y, station.x))
+      })
       map.value.fitBounds(bounds)
-
-      const listener = naver.maps.Event.addListener(map.value, 'idle', () => {
-        map.value.setZoom(17)
-        naver.maps.Event.removeListener(listener)
-      })
-    }
-
-    const createZoomControl = () => {
-      const zoomControl = document.createElement('div')
-      zoomControl.className = 'custom-zoom-control'
-
-      const zoomIn = document.createElement('button')
-      zoomIn.innerHTML = '+'
-      zoomIn.className = 'zoom-button zoom-in'
-      zoomIn.addEventListener('click', () =>
-        map.value.setZoom(map.value.getZoom() + 1)
-      )
-
-      const zoomOut = document.createElement('button')
-      zoomOut.innerHTML = '-'
-      zoomOut.className = 'zoom-button zoom-out'
-      zoomOut.addEventListener('click', () =>
-        map.value.setZoom(map.value.getZoom() - 1)
-      )
-
-      zoomControl.appendChild(zoomIn)
-      zoomControl.appendChild(zoomOut)
-
-      return zoomControl
-    }
-
-    const selectStation = (station) => {
-      router.push({
-        path: '/pathfinding',
-        query: {
-          x: station.x,
-          y: station.y,
-          name: station.stationName
-        }
-      })
     }
 
     const getDayType = () => {
@@ -525,33 +713,62 @@ export default {
       return day === 0 ? '일요일' : day === 6 ? '토요일' : '평일'
     }
 
-    const isHighProbability = (idx) => {
-      if (!selectedStations.value || selectedStations.value.length === 0)
-        return false
-      const currentStation = selectedStations.value.find((s) => s.seq === idx)
-      if (!currentStation) return false
+    const setFilePath = async (busNo) => {
+      const dayType = getDayType()
+      const csvFolderPath = `/csv/${busNo}/passengers/`
+      filePath.value = `${csvFolderPath}${busNo}_${dayType}.csv`
+      console.log('[INFO] CSV 파일 경로:', filePath.value)
+    }
 
-      const maxProbability = Math.max(
-        ...selectedStations.value.map((s) => s.probability)
-      )
-      return currentStation.probability >= maxProbability * 0.8 // 80% of max probability is considered high
+    const calculateProbabilityForStation = (idx) => {
+      const station = filteredStations.value.find((s) => s.idx === idx)
+      if (!station) return 0
+
+      const probability = selectedStations.value.find((s) => s.seq === idx)
+      return probability ? probability.probability : 0
+    }
+
+    const goToNextPage = (station) => {
+      router.push({
+        name: 'PathfindingPage',
+        query: {
+          stationName: station.stationName,
+          x: station.x,
+          y: station.y,
+          stationID: station.stationID
+        }
+      })
+    }
+
+    const goBack = () => {
+      router.go(-1)
+    }
+
+    const refreshBusInfo = async () => {
+      if (selectedRoute.value) {
+        const firstStation = filteredStations.value[0]
+        if (firstStation) {
+          arrivalInfo.value = await fetchBusArrivalInfo(
+            firstStation.localStationID,
+            selectedRoute.value.busNo,
+            timeInfo.value
+          )
+          lastFetchTime.value = new Date()
+        }
+      }
+    }
+
+    const checkBusLocation = () => {
+      if (selectedRoute.value) {
+        router.push({
+          path: '/buslocation',
+          query: { busNo: selectedRoute.value.busNo }
+        })
+      }
     }
 
     const sortBy = (sortType) => {
       currentSort.value = sortType
-      sortedStations.value = [...filteredStations.value].sort((a, b) => {
-        if (sortType === 'probability') {
-          const probA =
-            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
-            0
-          const probB =
-            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
-            0
-          return probB - probA
-        } else {
-          return a.idx - b.idx
-        }
-      })
     }
 
     const sortedStations = computed(() => {
@@ -570,20 +787,52 @@ export default {
       })
     })
 
-    const refreshBusInfo = async () => {
-      await fetchBusArrivalForStations()
+    const isHighProbability = (idx) => {
+      const station = selectedStations.value.find((s) => s.seq === idx)
+      return station ? station.probability > 0.5 : false // 예시 임계값
     }
 
-    const checkBusLocation = () => {
-      if (selectedRoute.value) {
-        router.push({
-          path: '/buslocation',
-          query: { busNo: selectedRoute.value.busNo }
-        })
+    const isHighestProbability = (idx) => {
+      if (!selectedStations.value || selectedStations.value.length === 0)
+        return false
+      const maxProbability = Math.max(
+        ...selectedStations.value.map((s) => s.probability)
+      )
+      const station = selectedStations.value.find((s) => s.seq === idx)
+      return station && station.probability === maxProbability
+    }
+
+    const selectStation = (station) => {
+      router.push({
+        path: '/pathfinding',
+        query: {
+          x: station.x,
+          y: station.y,
+          name: station.stationName
+        }
+      })
+    }
+
+    const getCurrentPosition = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            currentPosition.value = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            }
+          },
+          (error) => {
+            console.error('Error getting current position:', error)
+          }
+        )
+      } else {
+        console.error('Geolocation is not supported by this browser.')
       }
     }
 
     onMounted(() => {
+      getCurrentPosition()
       searchTransitRoutes()
     })
 
@@ -591,17 +840,27 @@ export default {
       fromLocation,
       toLocation,
       loading,
+      providedRouteExists,
       filteredRoutes,
       selectedRoute,
-      sortedStations,
-      selectBusRoute,
+      filteredStations,
+      selectedStations,
+      busBasicInfo,
+      arrivalInfo,
+      calculateProbabilityForStation,
+      goToNextPage,
       goBack,
-      isHighProbability,
-      selectStation,
-      currentSort,
-      sortBy,
       refreshBusInfo,
-      checkBusLocation
+      checkBusLocation,
+      sortBy,
+      sortedStations,
+      isHighProbability,
+      isHighestProbability,
+      selectStation,
+      selectBusRoute,
+      currentSort,
+      currentPosition,
+      isRealTimeData
     }
   }
 }
@@ -705,7 +964,7 @@ export default {
   font-size: 1.25rem;
   color: #334155;
   margin-bottom: 24px;
-  margin-top: 40px;
+  margin-top: 70px;
   font-weight: 600;
 }
 
@@ -1076,5 +1335,75 @@ export default {
 .check-route-button:active {
   transform: translateY(1px);
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.station-timeline-item.recommended {
+  background-color: #e6f7ff;
+  border: 2px solid #1890ff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.recommendation-badge {
+  background-color: #22c55e;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.station-timeline-item.recommended {
+  background-color: #f0f9ff;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1),
+    0 2px 4px -1px rgba(59, 130, 246, 0.06);
+  transition: all 0.3s ease;
+}
+
+.station-timeline-item.recommended:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1),
+    0 4px 6px -2px rgba(59, 130, 246, 0.05);
+}
+
+.recommendation-title {
+  font-size: 1.25rem;
+  color: #334155;
+  margin-bottom: 12px;
+  margin-top: 80px;
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  .station-name {
+    font-size: 0.9375rem;
+  }
+
+  .station-description,
+  .station-probability {
+    font-size: 0.8125rem;
+  }
+
+  .bus-info {
+    font-size: 0.8125rem;
+  }
+
+  .refresh-button {
+    width: 48px;
+    height: 48px;
+  }
+  .sort-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .check-route-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
 }
 </style>

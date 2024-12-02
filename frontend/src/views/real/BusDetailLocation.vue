@@ -193,7 +193,14 @@
                 <div class="bus-info-bubble">
                   <p class="bus-number">{{ stop.busInfo.plateNo }}</p>
                   <p class="seats-info">
-                    잔여 {{ stop.busInfo.remainSeatCnt }}석
+                    잔여
+                    {{
+                      stop.busInfo
+                        ? stop.busInfo.remainSeatCnt === -1
+                          ? '정보없음'
+                          : `${stop.busInfo.remainSeatCnt}석`
+                        : '정보없음'
+                    }}
                   </p>
                 </div>
               </div>
@@ -208,6 +215,23 @@
         </div>
       </div>
     </div>
+
+    <!-- New refresh button -->
+    <button @click="refreshBusLocations" class="refresh-button">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"
+        />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -542,6 +566,10 @@ export default {
       if (this.updateInterval) {
         clearInterval(this.updateInterval)
       }
+    },
+    refreshBusLocations() {
+      console.log('[DEBUG] Manually refreshing bus locations.')
+      this.fetchBusLocations()
     }
   },
   async mounted() {
@@ -896,5 +924,38 @@ export default {
   justify-content: center;
   font-size: 10px;
   font-weight: bold;
+}
+
+.refresh-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.refresh-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.1);
+}
+
+.refresh-button:active {
+  transform: scale(0.95);
+}
+
+.refresh-button svg {
+  width: 32px;
+  height: 32px;
 }
 </style>

@@ -193,7 +193,14 @@
                 <div class="bus-info-bubble">
                   <p class="bus-number">{{ stop.busInfo.plateNo }}</p>
                   <p class="seats-info">
-                    잔여 {{ stop.busInfo.remainSeatCnt }}석
+                    잔여
+                    {{
+                      stop.busInfo
+                        ? stop.busInfo.remainSeatCnt === -1
+                          ? '정보없음'
+                          : `${stop.busInfo.remainSeatCnt}석`
+                        : '정보없음'
+                    }}
                   </p>
                 </div>
               </div>

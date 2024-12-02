@@ -30,6 +30,8 @@ import Debugging from '@/views/real/test/Debugging.vue'
 import PathfindingPage from '@/views/real/PathfindingPage.vue'
 import PathDetail from '@/views/real/PathDetailPage.vue'
 import ResultPage from '@/views/real/test/ResultPage.vue'
+import NoBusPathDetailPage from '@/views/real/test/NoBusPathDetailPage.vue'
+import NoBusPathfindingPage from '@/views/real/test/NoBusPathfindingPage.vue'
 
 const routes = [
   { path: '/', component: MainPage }, // MainPage.vue
@@ -78,6 +80,16 @@ const routes = [
     path: '/result',
     name: 'ResultPage',
     component: ResultPage
+  },
+  {
+    path: '/nobusroutedetail',
+    name: 'NoBusPathDetailPage',
+    component: NoBusPathDetailPage
+  },
+  {
+    path: '/nobusroute',
+    name: 'NoBusPathfindingPage',
+    component: NoBusPathfindingPage
   },
   // {
   //   path: '/',

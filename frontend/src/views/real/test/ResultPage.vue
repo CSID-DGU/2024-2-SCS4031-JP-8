@@ -79,10 +79,16 @@
         <h2 class="section-title">
           {{ selectedRoute.busNo }}번 노선 정류장 추천
         </h2>
+        <div id="map" class="map-container">
+          <div class="custom-zoom-control">
+            <button class="zoom-button zoom-in" @click="zoomIn">+</button>
+            <button class="zoom-button zoom-out" @click="zoomOut">-</button>
+          </div>
+        </div>
+
         <button @click="checkBusLocation" class="check-route-button">
           노선 정보 확인
         </button>
-        <div id="map"></div>
         <div class="sort-options">
           <button
             @click="sortBy('probability')"
@@ -172,84 +178,103 @@
               <p class="station-description">
                 {{ station.stationName }} 정류장
               </p>
-              <div class="bus-arrival-info" v-if="station.arrivalInfo">
-                <div class="bus-info">
+              <div
+                class="bus-arrival-info"
+                :class="{ 'no-info': !arrivalInfo }"
+              >
+                <div v-if="!arrivalInfo" class="no-arrival-info">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
+                    class="info-icon"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    class="feather feather-clock"
                   >
                     <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
                   </svg>
-                  <span
-                    >첫 번째 버스: {{ station.arrivalInfo.predictTime1 }}분
-                    후</span
-                  >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather feather-users"
-                  >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>여석: {{ station.arrivalInfo.remainSeatCnt1 }}</span>
+                  <p class="info-text">도착정보없음</p>
+                  <p class="info-subtext">
+                    현재 도착 정보를 이용할 수 없습니다.
+                  </p>
                 </div>
-                <div class="bus-info">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather feather-clock"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  <span
-                    >두 번째 버스: {{ station.arrivalInfo.predictTime2 }}분
-                    후</span
-                  >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather feather-users"
-                  >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>여석: {{ station.arrivalInfo.remainSeatCnt2 }}</span>
+                <div v-else>
+                  <div class="bus-info">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span
+                      >첫 번째 버스: {{ arrivalInfo.firstBus.time }}분 후</span
+                    >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>여석: {{ arrivalInfo.firstBus.seats }}</span>
+                  </div>
+                  <div class="bus-info">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span
+                      >두 번째 버스: {{ arrivalInfo.secondBus.time }}분 후</span
+                    >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>여석: {{ arrivalInfo.secondBus.seats }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -314,9 +339,39 @@ export default {
     const currentSort = ref('probability')
     const currentPosition = ref(null)
     const lastFetchTime = ref(new Date())
-    const isRealTimeData = computed(() => {
-      return new Date().getTime() - lastFetchTime.value.getTime() < 60000 // 1분 이내
+    const isDataCurrent = computed(() => {
+      const currentTime = new Date()
+      const timeDifference = currentTime - lastFetchTime.value
+      return timeDifference <= 60000 // 1분 이내
     })
+    const isRealTimeData = computed(() => {
+      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
+      const storeTime = new Date(
+        2024, // year을 하드코딩
+        timeInfo.value.month - 1,
+        timeInfo.value.day,
+        timeInfo.value.hour,
+        timeInfo.value.minute
+      )
+
+      const currentTime = new Date()
+
+      const isStoreCurrent = Math.abs(currentTime - storeTime) <= 60000 // 1분 이내
+      const result = isStoreCurrent && isDataCurrent.value
+
+      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
+      console.log('[DEBUG] isRealTimeData 계산 결과:', {
+        storeTime,
+        currentTime,
+        isStoreCurrent,
+        isDataCurrent: isDataCurrent.value,
+        result
+      })
+
+      return result
+    })
+
+    // Duplicate function removed
 
     const timeInfo = computed(() => store.getters['time/getTime'])
 
@@ -328,19 +383,24 @@ export default {
       const parsedMinute = parseInt(minute, 10)
       const currentTime = parsedHour * 60 + parsedMinute
 
-      if (busNo === '5000' || busNo === '1112' || busNo === '6001') {
+      if (
+        busNo === '5000' ||
+        busNo === '1112' ||
+        busNo === '6001' ||
+        busNo === 'M7731' ||
+        busNo === '5000B'
+      ) {
         return true
       } else if (busNo === '5000A') {
         return currentTime >= 300 && currentTime < 900
-      } else if (busNo === '5000B') {
-        return (
-          (currentTime >= 725 && currentTime < 1440) ||
-          (currentTime >= 0 && currentTime < 180)
-        )
-      }
+      } // } else if (busNo === '5000B') {
+      //   // return (
+      //   //   (currentTime >= 725 && currentTime < 1440) ||
+      //   //   (currentTime >= 0 && currentTime < 180)
+      //   // )
+      // }
       return false
     }
-
     const searchTransitRoutes = async () => {
       loading.value = true
       try {
@@ -392,9 +452,28 @@ export default {
 
                     const stations =
                       stationDetailResponse.data.result.station || []
-                    const targetStation = stations.find(
+                    const enrichedStations = stations.map(
+                      (station, index, fullList) => {
+                        const nonStopCount = fullList
+                          .slice(0, index)
+                          .filter(
+                            (prevStation) => prevStation.nonstopStation === 1
+                          ).length
+
+                        return {
+                          ...station,
+                          idx: station.idx - nonStopCount,
+                          localStationID: station.localStationID // localStationID 추가
+                        }
+                      }
+                    )
+
+                    console.log('[DEBUG] Enriched Stations:', enrichedStations)
+
+                    const targetStation = enrichedStations.find(
                       (station) => station.stationID === segment.startID
                     )
+
                     const direction =
                       targetStation?.stationDirection === 2 ? 'up' : 'down'
                     console.log(
@@ -406,11 +485,15 @@ export default {
                       directionText: directionText(direction),
                       stationID: segment.startID,
                       stationName: segment.startName,
+                      localStationID: targetStation?.localStationID, // localStationID 추가
                       firstStation: {
-                        name: stations[0]?.stationName,
-                        id: stations[0]?.stationID,
+                        name: enrichedStations[0]?.stationName,
+                        id: enrichedStations[0]?.stationID,
+                        localStationID: enrichedStations[0]?.localStationID, // 첫 정류장의 localStationID
                         direction: directionText(
-                          stations[0]?.stationDirection === 2 ? 'up' : 'down'
+                          enrichedStations[0]?.stationDirection === 2
+                            ? 'up'
+                            : 'down'
                         )
                       }
                     })
@@ -440,13 +523,20 @@ export default {
           '조건에 맞는 모든 노선 (중복 제거 후):',
           filteredRoutes.value
         )
-
+        // 여기에 새로운 조건 추가
+        if (filteredRoutes.value.length === 0) {
+          // 제공하는 버스 노선이 없으면 '/nobusroute'로 라우팅
+          router.push('/nobusroute')
+          return
+        }
         // 첫 번째 버스 노선 자동 선택
         if (filteredRoutes.value.length > 0) {
           await selectBusRoute(filteredRoutes.value[0])
         }
       } catch (error) {
         console.error('API 호출 중 오류 발생:', error)
+        // 에러 발생 시에도 '/nobusroute'로 라우팅
+        router.push('/nobusroute')
       } finally {
         loading.value = false
       }
@@ -565,9 +655,65 @@ export default {
           // 지도 초기화 및 마커 추가
           await nextTick()
           initializeMap()
+          await fetchArrivalInfoForStations()
         }
       } catch (error) {
         console.error('노선 선택 오류:', error)
+      }
+    }
+    const fetchArrivalInfoForStations = async () => {
+      try {
+        for (const station of selectedStations.value) {
+          const { localStationID: stationId } = station // 정류장의 localStationID 사용
+          const routeId = busRouteData[selectedRoute.value.busNo]?.routeId // busRouteData에서 routeId 가져오기
+          const serviceKey =
+            'EVTsGjdsoUlBtJTpdh%2FitgFJXzeeNK%2FBP4lN8my%2Bi9AaoLGNln1kqRcyVP7CVRY8GsiXkX%2BOMl2HviEvq6hlfQ%3D%3D' // 인증키
+
+          if (!routeId) {
+            console.error(
+              `[ERROR] routeId를 찾을 수 없습니다. 노선 번호: ${selectedRoute.value.busNo}`
+            )
+            continue
+          }
+
+          const url = `http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem`
+          const params = {
+            serviceKey,
+            stationId,
+            routeId
+          }
+
+          console.log(`[DEBUG] API 호출: 정류장 ${stationId}, 노선 ${routeId}`)
+
+          const response = await axios.get(url, { params })
+          const data = response.data
+
+          if (data?.msgHeader?.resultCode === '0') {
+            console.log(`[INFO] 정류장 ${stationId} 도착 정보:`, data)
+            station.arrivalInfo = {
+              firstBus: {
+                time: data.predictTime1,
+                seats: data.remainSeatCnt1,
+                plate: data.plateNo1
+              },
+              secondBus: {
+                time: data.predictTime2,
+                seats: data.remainSeatCnt2,
+                plate: data.plateNo2
+              }
+            }
+          } else {
+            console.warn(
+              `[WARN] 정류장 ${stationId} 데이터 없음:`,
+              data?.msgHeader?.resultMessage || '알 수 없는 오류'
+            )
+            station.arrivalInfo = null
+          }
+        }
+
+        console.log('[INFO] 모든 정류장 도착 정보:', selectedStations.value)
+      } catch (error) {
+        console.error('[ERROR] 정류장 도착 정보 호출 중 오류:', error)
       }
     }
 
@@ -706,7 +852,17 @@ export default {
       })
       map.value.fitBounds(bounds)
     }
+    const zoomIn = () => {
+      if (map.value) {
+        map.value.setZoom(map.value.getZoom() + 1)
+      }
+    }
 
+    const zoomOut = () => {
+      if (map.value) {
+        map.value.setZoom(map.value.getZoom() - 1)
+      }
+    }
     const getDayType = () => {
       const now = new Date()
       const day = now.getDay()
@@ -860,7 +1016,16 @@ export default {
       selectBusRoute,
       currentSort,
       currentPosition,
-      isRealTimeData
+      isRealTimeData,
+      refreshBusInfo,
+      zoomIn,
+      zoomOut
+    }
+  },
+  props: {
+    arrivalInfo: {
+      type: Object,
+      default: null
     }
   }
 }
@@ -1222,6 +1387,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
   transition: all 0.3s ease;
+  margin-right: 740px;
 }
 
 .refresh-button:hover {
@@ -1277,7 +1443,7 @@ export default {
   }
 }
 
-.custom-zoom-control {
+/* .custom-zoom-control {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1285,7 +1451,7 @@ export default {
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-}
+} */
 
 .zoom-button {
   width: 40px;
@@ -1405,5 +1571,90 @@ export default {
     padding: 12px 16px;
     font-size: 15px;
   }
+}
+.bus-arrival-info {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #f0f9ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bus-arrival-info.no-info {
+  background-color: #f3f4f6;
+}
+
+.no-arrival-info {
+  text-align: center;
+}
+
+.info-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  color: #9ca3af;
+}
+
+.info-text {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.info-subtext {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.bus-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.bus-info:last-child {
+  margin-bottom: 0;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  color: #3b82f6;
+}
+
+.bus-info span {
+  font-size: 0.9375rem;
+  color: #1f2937;
+  margin-right: 16px;
+}
+
+.custom-zoom-control {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: bold;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-button:hover {
+  background: #f1f5f9;
 }
 </style>

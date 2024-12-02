@@ -49,6 +49,7 @@
       <transition name="modal-fade">
         <div v-if="showTimeModal" class="modal">
           <div class="modal-content">
+            <div class="modal-handle"></div>
             <h3>출발 시각 설정</h3>
             <div class="time-selector">
               <div class="date-picker scrollable">
@@ -621,5 +622,13 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
 .modal-fade-leave-to {
   opacity: 0;
   transform: translateY(100%);
+}
+
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background-color: #e2e8f0;
+  border-radius: 2px;
+  margin: 0 auto 16px;
 }
 </style>

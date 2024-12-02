@@ -314,9 +314,39 @@ export default {
     const currentSort = ref('probability')
     const currentPosition = ref(null)
     const lastFetchTime = ref(new Date())
-    const isRealTimeData = computed(() => {
-      return new Date().getTime() - lastFetchTime.value.getTime() < 60000 // 1분 이내
+    const isDataCurrent = computed(() => {
+      const currentTime = new Date()
+      const timeDifference = currentTime - lastFetchTime.value
+      return timeDifference <= 60000 // 1분 이내
     })
+    const isRealTimeData = computed(() => {
+      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
+      const storeTime = new Date(
+        2024, // year을 하드코딩
+        timeInfo.value.month - 1,
+        timeInfo.value.day,
+        timeInfo.value.hour,
+        timeInfo.value.minute
+      )
+
+      const currentTime = new Date()
+
+      const isStoreCurrent = Math.abs(currentTime - storeTime) <= 60000 // 1분 이내
+      const result = isStoreCurrent && isDataCurrent.value
+
+      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
+      console.log('[DEBUG] isRealTimeData 계산 결과:', {
+        storeTime,
+        currentTime,
+        isStoreCurrent,
+        isDataCurrent: isDataCurrent.value,
+        result
+      })
+
+      return result
+    })
+
+    // Duplicate function removed
 
     const timeInfo = computed(() => store.getters['time/getTime'])
 
@@ -860,7 +890,8 @@ export default {
       selectBusRoute,
       currentSort,
       currentPosition,
-      isRealTimeData
+      isRealTimeData,
+      refreshBusInfo
     }
   }
 }

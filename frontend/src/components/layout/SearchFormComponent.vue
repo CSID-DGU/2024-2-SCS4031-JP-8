@@ -164,26 +164,39 @@ const clearDestination = () => {
 }
 
 const formattedTime = computed(() => {
+  const time = store.getters['time/getTime']
+  if (
+    !time ||
+    !time.month ||
+    !time.day ||
+    !time.hour ||
+    time.minute === undefined
+  ) {
+    return '출발 시간을 설정하세요'
+  }
   const dayText =
-    selectedDay.value === 'today'
+    time.day === new Date().getDate()
       ? '오늘'
-      : selectedDay.value === 'tomorrow'
+      : time.day === new Date().getDate() + 1
       ? '내일'
-      : `${new Date().getMonth() + 1}월 ${selectedDay.value}일`
-  const meridiemText = selectedMeridiem.value === 'AM' ? '오전' : '오후'
-  return `${dayText} ${meridiemText} ${selectedHour.value}:${
-    selectedMinute.value < 10
-      ? '0' + selectedMinute.value
-      : selectedMinute.value
-  } 출발`
+      : `${time.month}월 ${time.day}일`
+
+  const meridiemText = time.hour >= 12 ? '오후' : '오전'
+  const formattedHour = time.hour % 12 || 12 // 12시간제로 표시
+  const formattedMinute = time.minute.toString().padStart(2, '0')
+
+  return `${dayText} ${meridiemText} ${formattedHour}:${formattedMinute} 출발`
 })
 
 const setCurrentTime = () => {
   const now = new Date()
-  selectedDay.value = 'today'
-  selectedMeridiem.value = now.getHours() >= 12 ? 'PM' : 'AM'
-  selectedHour.value = now.getHours() % 12 || 12
-  selectedMinute.value = now.getMinutes()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const hour = now.getHours()
+  const minute = now.getMinutes()
+
+  store.commit('time/setTime', { month, day, hour, minute })
+  console.log('[DEBUG] Vuex 저장된 시간 데이터:', store.getters['time/getTime']) // 로그 추가
 }
 
 const openTimeModal = () => {
@@ -191,6 +204,11 @@ const openTimeModal = () => {
   tempSelectedMeridiem.value = selectedMeridiem.value
   tempSelectedHour.value = selectedHour.value
   tempSelectedMinute.value = selectedMinute.value
+  console.log(
+    '[DEBUG] Vuex에 저장된 시간 데이터:',
+    store.getters['time/getTime']
+  )
+
   showTimeModal.value = true
 }
 
@@ -220,13 +238,15 @@ const confirmTime = () => {
       ? new Date().getDate()
       : selectedDay.value === 'tomorrow'
       ? new Date().getDate() + 1
-      : selectedDay.value
+      : parseInt(selectedDay.value)
   const hour =
     selectedMeridiem.value === 'PM'
-      ? selectedHour.value + 12
-      : selectedHour.value
-  const minute = selectedMinute.value
+      ? parseInt(selectedHour.value) + 12
+      : parseInt(selectedHour.value)
+  const minute = parseInt(selectedMinute.value)
+
   store.commit('time/setTime', { month, day, hour, minute })
+  console.log('[DEBUG] Vuex 저장된 시간 데이터:', store.getters['time/getTime']) // 로그 추가
   showTimeModal.value = false
 }
 

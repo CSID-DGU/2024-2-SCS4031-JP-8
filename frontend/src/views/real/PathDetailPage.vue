@@ -133,7 +133,7 @@ const goBack = () => {
   router.go(-1)
 }
 
-// 지도 초기화 함수
+// 수정된 지도 초기화 함수
 const initializeMap = () => {
   const sx = parseFloat(departure.value?.coordinates?.x)
   const sy = parseFloat(departure.value?.coordinates?.y)
@@ -149,33 +149,30 @@ const initializeMap = () => {
     return
   }
 
-  const centerLat = (sy + ey) / 2
-  const centerLng = (sx + ex) / 2
-  const centerPoint = new naver.maps.LatLng(centerLat, centerLng)
+  const map = new naver.maps.Map('map', {
+    center: new naver.maps.LatLng((sy + ey) / 2, (sx + ex) / 2),
+    zoom: 12
+  })
 
-  console.log('[DEBUG] 계산된 지도 중심 좌표:', { centerLat, centerLng })
-
-  const mapOptions = {
-    center: centerPoint,
-    zoom: 20,
-    zoomControl: false,
-    zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
-  }
-
-  const map = new naver.maps.Map('map', mapOptions)
-  console.log('[DEBUG] 지도 생성 완료')
-
-  // 경로 좌표 포함 영역 계산
+  // 출발지와 도착지 좌표로 경계 설정
   const bounds = new naver.maps.LatLngBounds(
-    new naver.maps.LatLng(sy, sx), // 출발지 좌표
-    new naver.maps.LatLng(ey, ex) // 도착지 좌표
+    new naver.maps.LatLng(Math.min(sy, ey), Math.min(sx, ex)),
+    new naver.maps.LatLng(Math.max(sy, ey), Math.max(sx, ex))
   )
 
-  // 지도 화면을 경로 전체에 맞춤
-  map.fitBounds(bounds)
-  console.log('[DEBUG] 지도 fitBounds 완료:', bounds)
+  // 경계에 맞게 지도 조정
+  map.fitBounds(bounds, {
+    top: 50,
+    right: 50,
+    bottom: 50,
+    left: 50
+  })
 
-  searchPubTransPath(map, sx, sy, ex, ey)
+  console.log('[DEBUG] 지도 생성 완료')
+
+  // 경로와 마커 추가
+  drawPolyLines(map, route.value)
+  drawMarkers(map, sx, sy, ex, ey)
 }
 
 // 경로 검색 API 호출
@@ -233,54 +230,109 @@ const loadLane = (map, mapObj, sx, sy, ex, ey) => {
     })
 }
 
-// 지도에 마커 추가
+// 지도에 마커 추가 (커스텀 마커로 변경)
 const drawMarkers = (map, sx, sy, ex, ey) => {
-  console.log('[DEBUG] drawMarkers 호출:', { sx, sy, ex, ey })
+  console.log('[DEBUG] drawMarkers 호출')
 
+  // 출발지 마커
   new naver.maps.Marker({
     position: new naver.maps.LatLng(sy, sx),
-    map: map
+    map: map,
+    icon: {
+      content: `
+            <div style="
+              width: 40px;
+              height: 40px;
+              background-color: #4CAF50;
+              border: 3px solid #FFFFFF;
+              border-radius: 50%;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              color: #FFFFFF;
+              font-weight: bold;
+              font-size: 14px;
+            ">
+              출발
+            </div>
+          `,
+      size: new naver.maps.Size(40, 40),
+      anchor: new naver.maps.Point(20, 20)
+    }
   })
-  console.log('[DEBUG] 출발지 마커 추가')
 
+  // 도착지 마커
   new naver.maps.Marker({
     position: new naver.maps.LatLng(ey, ex),
-    map: map
+    map: map,
+    icon: {
+      content: `
+            <div style="
+              width: 40px;
+              height: 40px;
+              background-color: #F44336;
+              border: 3px solid #FFFFFF;
+              border-radius: 50%;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              color: #FFFFFF;
+              font-weight: bold;
+              font-size: 14px;
+            ">
+              도착
+            </div>
+          `,
+      size: new naver.maps.Size(40, 40),
+      anchor: new naver.maps.Point(20, 20)
+    }
   })
-  console.log('[DEBUG] 도착지 마커 추가')
-}
 
-// 경로에 폴리라인 추가
-const drawPolyLines = (map, data) => {
+  console.log('[DEBUG] 출발지 및 도착지 마커 추가 완료')
+}
+// 경로에 폴리라인 추가 (전 페이지에서 받은 경로 데이터 사용)
+const drawPolyLines = (map, route) => {
   console.log('[DEBUG] drawPolyLines 호출')
 
-  if (!data.result?.lane) {
-    console.error('[ERROR] Polyline 데이터를 찾을 수 없습니다.')
+  if (!route || !route.subPath) {
+    console.error('[ERROR] 경로 데이터가 없습니다.')
     return
   }
 
-  data.result.lane.forEach((lane) => {
-    console.log('[DEBUG] lane 데이터:', lane)
-    lane.section.forEach((section) => {
-      if (section.graphPos?.length) {
-        const lineArray = section.graphPos.map(
-          (pos) => new naver.maps.LatLng(pos.y, pos.x)
-        )
-        const color =
-          lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#f07330' : '#000000'
+  route.subPath.forEach((segment) => {
+    if (segment.trafficType === 3) {
+      // 도보 구간은 폴리라인을 그리지 않음
+      return
+    }
 
-        new naver.maps.Polyline({
-          map: map,
-          path: lineArray,
-          strokeWeight: 8,
-          strokeColor: color,
-          strokeOpacity: 1
-        })
-        console.log('[DEBUG] Polyline 추가 완료:', lineArray)
-      } else {
-        console.warn('[WARN] graphPos 데이터가 누락되었습니다:', section)
-      }
-    })
+    if (segment.passStopList && segment.passStopList.stations) {
+      const lineArray = segment.passStopList.stations.map(
+        (station) => new naver.maps.LatLng(station.y, station.x)
+      )
+
+      const color =
+        segment.trafficType === 1
+          ? '#3a54fc' // 지하철
+          : segment.trafficType === 2
+          ? '#f07330' // 버스
+          : '#000000' // 기본 색상
+
+      new naver.maps.Polyline({
+        map: map,
+        path: lineArray,
+        strokeWeight: 8,
+        strokeColor: color,
+        strokeOpacity: 1,
+        strokeLineCap: 'round', // 라인 끝 둥글게
+        strokeLineJoin: 'round' // 라인 교차점 둥글게
+      })
+
+      console.log('[DEBUG] Polyline 추가 완료:', lineArray)
+    } else {
+      console.warn('[WARN] 해당 구간에 경로 데이터가 없습니다:', segment)
+    }
   })
 }
 
@@ -658,5 +710,38 @@ onMounted(() => {
   .walking-info {
     font-size: 0.8125rem;
   }
+}
+.custom-marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 4px solid;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.start-marker {
+  border-color: #4caf50;
+}
+
+.start-marker::after {
+  content: 'S';
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.end-marker {
+  border-color: #f44336;
+}
+
+.end-marker::after {
+  content: 'E';
+  color: #f44336;
+  font-weight: bold;
+  font-size: 16px;
 }
 </style>

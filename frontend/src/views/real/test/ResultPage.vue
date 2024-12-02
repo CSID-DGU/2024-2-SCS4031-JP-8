@@ -99,6 +99,13 @@
             거리순
           </button>
         </div>
+        <div class="recommendation-title">
+          {{
+            isRealTimeData
+              ? '실시간 여석 기반 추천 정류장'
+              : '예측된 재차인원 기반 추천 정류장'
+          }}
+        </div>
         <div class="stations-list">
           <div
             v-for="(station, index) in sortedStations"
@@ -107,6 +114,7 @@
             :class="{
               'high-probability': isHighProbability(station.idx),
               'low-probability': !isHighProbability(station.idx),
+              recommended: isHighestProbability(station.idx),
               first: index === 0,
               last: index === sortedStations.length - 1
             }"
@@ -117,7 +125,14 @@
             </div>
             <div class="station-content">
               <div class="station-header">
-                <h4 class="station-name">{{ station.stationName }}</h4>
+                <h4 class="station-name">
+                  {{ station.stationName }}
+                  <span
+                    v-if="isHighestProbability(station.idx)"
+                    class="recommendation-badge"
+                    >추천</span
+                  >
+                </h4>
                 <div class="station-probability">
                   <svg
                     v-if="isHighProbability(station.idx)"
@@ -298,6 +313,10 @@ export default {
     const markers = ref([])
     const currentSort = ref('probability')
     const currentPosition = ref(null)
+    const lastFetchTime = ref(new Date())
+    const isRealTimeData = computed(() => {
+      return new Date().getTime() - lastFetchTime.value.getTime() < 60000 // 1분 이내
+    })
 
     const timeInfo = computed(() => store.getters['time/getTime'])
 
@@ -511,6 +530,7 @@ export default {
             timeInfo.value
           )
           arrivalInfo.value = arrivalData
+          lastFetchTime.value = new Date()
 
           console.log('[INFO] 실시간 도착 정보:', arrivalInfo.value)
 
@@ -563,8 +583,8 @@ export default {
           (parseFloat(firstStation.y) + parseFloat(lastStation.y)) / 2,
           (parseFloat(firstStation.x) + parseFloat(lastStation.x)) / 2
         ),
-        zoom: 12,
-        zoomControl: true,
+        zoom: 13,
+        zoomControl: false,
         zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
       }
 
@@ -593,6 +613,29 @@ export default {
           }
         })
         markers.value.push(currentPositionMarker)
+      }
+
+      // 출발지 마커 추가
+      const departureCoords = store.state.departure.departure.coordinates
+      if (departureCoords) {
+        const departureMarker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(departureCoords.y, departureCoords.x),
+          map: map.value,
+          icon: {
+            content: `
+              <div style="
+                background: #FF5722;
+                color: #fff;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 12px;
+              ">출발</div>
+            `,
+            anchor: new naver.maps.Point(30, 15)
+          }
+        })
+        markers.value.push(departureMarker)
       }
 
       // 기존 마커 제거
@@ -710,6 +753,7 @@ export default {
             selectedRoute.value.busNo,
             timeInfo.value
           )
+          lastFetchTime.value = new Date()
         }
       }
     }
@@ -746,6 +790,16 @@ export default {
     const isHighProbability = (idx) => {
       const station = selectedStations.value.find((s) => s.seq === idx)
       return station ? station.probability > 0.5 : false // 예시 임계값
+    }
+
+    const isHighestProbability = (idx) => {
+      if (!selectedStations.value || selectedStations.value.length === 0)
+        return false
+      const maxProbability = Math.max(
+        ...selectedStations.value.map((s) => s.probability)
+      )
+      const station = selectedStations.value.find((s) => s.seq === idx)
+      return station && station.probability === maxProbability
     }
 
     const selectStation = (station) => {
@@ -801,15 +855,555 @@ export default {
       sortBy,
       sortedStations,
       isHighProbability,
+      isHighestProbability,
       selectStation,
       selectBusRoute,
       currentSort,
-      currentPosition
+      currentPosition,
+      isRealTimeData
     }
   }
 }
 </script>
 
 <style scoped>
-@import './Result.css';
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+.result-page {
+  width: 425px;
+  max-width: 100%;
+  margin: 0 auto;
+  font-family: 'Pretendard', sans-serif;
+  background-color: #ffffff;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 20px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.back-button {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  margin-right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button svg {
+  width: 24px;
+  height: 24px;
+  stroke: #000000;
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.content {
+  padding: 24px 20px;
+}
+
+.location-info {
+  margin-bottom: 32px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.location:last-child {
+  margin-bottom: 0;
+}
+
+.location-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.location-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+.location-name {
+  font-size: 1.125rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.location-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: #334155;
+  margin-bottom: 24px;
+  margin-top: 70px;
+  font-weight: 600;
+}
+
+.content > .section-title:first-of-type {
+  margin-top: 48px;
+}
+
+.route-info {
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.route-info ul {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.route-item {
+  flex: 1 1 auto;
+  min-width: 60px;
+  max-width: calc(25% - 10px);
+  padding: 12px;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  text-align: center;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-item:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.no-routes,
+.loading {
+  text-align: center;
+  padding: 20px;
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.recommendation {
+  margin-top: 48px;
+}
+
+#map {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  height: 200px;
+  position: relative;
+}
+
+.stations-list {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+}
+
+.station-timeline-item {
+  display: flex;
+  gap: 32px;
+  position: relative;
+  padding: 16px 0;
+  transition: all 0.3s ease;
+}
+
+.station-timeline-item:hover {
+  transform: translateX(5px);
+}
+
+.timeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 2px;
+  position: relative;
+  margin-left: 32px;
+}
+
+.timeline-connector::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 2px dashed #cbd5e1;
+  transform: translateX(-50%);
+}
+
+.station-timeline-item:first-child .timeline-connector::before {
+  top: 50%;
+}
+
+.station-timeline-item:last-child .timeline-connector::before {
+  display: none;
+}
+
+.timeline-node {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  border: 2px solid #cbd5e1;
+  z-index: 1;
+  position: relative;
+}
+
+.station-content {
+  flex: 1;
+  max-width: calc(100% - 80px);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.station-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.station-probability {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.station-probability svg {
+  margin-right: 4px;
+}
+
+.station-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 8px 0 0;
+}
+
+/* High probability styles */
+.station-timeline-item.high-probability .station-content {
+  background-color: #93c5fd;
+}
+
+.station-timeline-item.high-probability .station-probability {
+  color: #1d4ed8;
+}
+
+.station-timeline-item.high-probability .timeline-node {
+  background-color: #3b82f6;
+  border-color: #2563eb;
+}
+
+/* Low probability styles */
+.station-timeline-item.low-probability .station-content {
+  background-color: #e2e8f0;
+}
+
+.station-timeline-item.low-probability .station-probability {
+  color: #64748b;
+}
+
+.sort-options {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  gap: 12px;
+}
+
+.sort-button {
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sort-button.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.sort-button:hover {
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.sort-button.active:hover {
+  background-color: #2563eb;
+}
+
+.bus-arrival-info {
+  margin-top: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.bus-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bus-info:last-child {
+  margin-bottom: 0;
+}
+
+.bus-info svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.bus-info span {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-right: 16px;
+}
+
+.refresh-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  transition: all 0.3s ease;
+}
+
+.refresh-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
+}
+
+.refresh-button:active {
+  transform: scale(0.95) translateY(1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.no-stations {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+.no-stations p {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+@media (max-width: 390px) {
+  .station-name {
+    font-size: 0.9375rem;
+  }
+
+  .station-description,
+  .station-probability {
+    font-size: 0.8125rem;
+  }
+
+  .bus-info {
+    font-size: 0.8125rem;
+  }
+
+  .refresh-button {
+    width: 48px;
+    height: 48px;
+  }
+  .sort-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .check-route-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+}
+
+.custom-zoom-control {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  font-weight: bold;
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.zoom-button:hover {
+  background-color: #f0f0f0;
+}
+
+.zoom-in {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.check-route-button {
+  display: block;
+  width: calc(100% - 40px);
+  max-width: 300px;
+  margin: 20px auto;
+  padding: 14px 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+}
+
+.check-route-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
+}
+
+.check-route-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.station-timeline-item.recommended {
+  background-color: #e6f7ff;
+  border: 2px solid #1890ff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.recommendation-badge {
+  background-color: #22c55e;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.station-timeline-item.recommended {
+  background-color: #f0f9ff;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1),
+    0 2px 4px -1px rgba(59, 130, 246, 0.06);
+  transition: all 0.3s ease;
+}
+
+.station-timeline-item.recommended:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1),
+    0 4px 6px -2px rgba(59, 130, 246, 0.05);
+}
+
+.recommendation-title {
+  font-size: 1.25rem;
+  color: #334155;
+  margin-bottom: 12px;
+  margin-top: 80px;
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  .station-name {
+    font-size: 0.9375rem;
+  }
+
+  .station-description,
+  .station-probability {
+    font-size: 0.8125rem;
+  }
+
+  .bus-info {
+    font-size: 0.8125rem;
+  }
+
+  .refresh-button {
+    width: 48px;
+    height: 48px;
+  }
+  .sort-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .check-route-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+}
 </style>

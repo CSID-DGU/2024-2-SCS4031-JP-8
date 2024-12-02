@@ -943,6 +943,7 @@ export default {
   box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
   transition: all 0.3s ease;
   z-index: 1000;
+  margin-right: 740px;
 }
 
 .refresh-button:hover {

@@ -79,10 +79,16 @@
         <h2 class="section-title">
           {{ selectedRoute.busNo }}번 노선 정류장 추천
         </h2>
+        <div id="map" class="map-container">
+          <div class="custom-zoom-control">
+            <button class="zoom-button zoom-in" @click="zoomIn">+</button>
+            <button class="zoom-button zoom-out" @click="zoomOut">-</button>
+          </div>
+        </div>
+
         <button @click="checkBusLocation" class="check-route-button">
           노선 정보 확인
         </button>
-        <div id="map"></div>
         <div class="sort-options">
           <button
             @click="sortBy('probability')"
@@ -377,16 +383,22 @@ export default {
       const parsedMinute = parseInt(minute, 10)
       const currentTime = parsedHour * 60 + parsedMinute
 
-      if (busNo === '5000' || busNo === '1112' || busNo === '6001') {
+      if (
+        busNo === '5000' ||
+        busNo === '1112' ||
+        busNo === '6001' ||
+        busNo === 'M7731' ||
+        busNo === '5000B'
+      ) {
         return true
       } else if (busNo === '5000A') {
         return currentTime >= 300 && currentTime < 900
-      } else if (busNo === '5000B') {
-        return (
-          (currentTime >= 725 && currentTime < 1440) ||
-          (currentTime >= 0 && currentTime < 180)
-        )
-      }
+      } // } else if (busNo === '5000B') {
+      //   // return (
+      //   //   (currentTime >= 725 && currentTime < 1440) ||
+      //   //   (currentTime >= 0 && currentTime < 180)
+      //   // )
+      // }
       return false
     }
     const searchTransitRoutes = async () => {
@@ -840,7 +852,17 @@ export default {
       })
       map.value.fitBounds(bounds)
     }
+    const zoomIn = () => {
+      if (map.value) {
+        map.value.setZoom(map.value.getZoom() + 1)
+      }
+    }
 
+    const zoomOut = () => {
+      if (map.value) {
+        map.value.setZoom(map.value.getZoom() - 1)
+      }
+    }
     const getDayType = () => {
       const now = new Date()
       const day = now.getDay()
@@ -995,7 +1017,9 @@ export default {
       currentSort,
       currentPosition,
       isRealTimeData,
-      refreshBusInfo
+      refreshBusInfo,
+      zoomIn,
+      zoomOut
     }
   },
   props: {
@@ -1363,6 +1387,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
   transition: all 0.3s ease;
+  margin-right: 740px;
 }
 
 .refresh-button:hover {
@@ -1418,7 +1443,7 @@ export default {
   }
 }
 
-.custom-zoom-control {
+/* .custom-zoom-control {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1426,7 +1451,7 @@ export default {
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-}
+} */
 
 .zoom-button {
   width: 40px;
@@ -1603,5 +1628,33 @@ export default {
   font-size: 0.9375rem;
   color: #1f2937;
   margin-right: 16px;
+}
+
+.custom-zoom-control {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: bold;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.zoom-button:hover {
+  background: #f1f5f9;
 }
 </style>

@@ -267,14 +267,14 @@ const drawPolyLines = (map, data) => {
           (pos) => new naver.maps.LatLng(pos.y, pos.x)
         )
         const color =
-          lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#42c700' : '#000000'
+          lane.type === 1 ? '#3a54fc' : lane.type === 2 ? '#f07330' : '#000000'
 
         new naver.maps.Polyline({
           map: map,
           path: lineArray,
-          strokeWeight: 7,
+          strokeWeight: 8,
           strokeColor: color,
-          strokeOpacity: 0.8
+          strokeOpacity: 1
         })
         console.log('[DEBUG] Polyline 추가 완료:', lineArray)
       } else {

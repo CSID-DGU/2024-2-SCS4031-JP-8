@@ -8,16 +8,18 @@ passenger_data = pd.read_csv('5000B_week_pass.csv', index_col='정류장')
 
 def poisson_prob(k, sigma, lam):
     return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(k, int(sigma)))
+def normal_prob(k, lam):
+    return sum(math.exp(-lam) * (lam ** i) / math.factorial(i) for i in range(0, k))
 
 def get_bus_location(route_id):
-    return 38 # 현재 정류장 인덱스, 다음 정류장 인덱스
+    return 41 # 현재 정류장 인덱스, 다음 정류장 인덱스
 
 def calculate_boarding_probability(route_id, target_station, current_time, passenger_data):
     current_bus = get_bus_location(route_id)
     
-    remain_seat = 66    
-    time_slot = 17
-    search_time = 45    #current_time.minute
+    remain_seat = 34    
+    time_slot = 15
+    search_time = 19    #current_time.minute
     
     station_list = passenger_data.index.tolist()
     relevant_stations = station_list[current_bus:target_station+1]
@@ -43,12 +45,14 @@ def calculate_boarding_probability(route_id, target_station, current_time, passe
         #    buses_until_now = total_bus - buses_until_now
         
         pass_per_time = max(1, avg_pass) * buses_until_now
-        
         target_pass = max(0, int(total_pass - remain_seat))
-        station_prob = poisson_prob(target_pass, total_pass, pass_per_time)
         
+        if 7 <= time_slot < 10 or 17 <= time_slot < 20 :
+            station_prob = poisson_prob(target_pass, total_pass, pass_per_time) 
+        else:
+            station_prob = normal_prob(remain_seat, pass_per_time)   
+               
         cumulative_prob *= station_prob
-        
         probabilities.append((station, cumulative_prob))
         
         if remain_seat > 0:

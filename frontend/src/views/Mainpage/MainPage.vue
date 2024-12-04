@@ -40,14 +40,13 @@
 <script>
 import SearchFormComponent from '@/components/layout/SearchFormComponent.vue'
 import { mapState, mapActions } from 'vuex'
-import SlidingMenu from '../SlidingMenu.vue'
-import Footer from '../Footer.vue'
+//import SlidingMenu from '../../SlidingMenu.vueenu.vue'
+import Footer from './Footer.vue'
 import { Bus, Plus, Minus, Crosshair } from 'lucide-vue-next'
 
 export default {
   components: {
     SearchFormComponent,
-    SlidingMenu,
     Footer,
     Bus,
     Plus,

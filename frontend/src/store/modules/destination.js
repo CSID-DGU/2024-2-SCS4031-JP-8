@@ -1,5 +1,5 @@
 const state = {
-  initialize: false, // 초기화 플래그 추가
+  initialize: false, // 초기화 플래그
   destination: null
 }
 

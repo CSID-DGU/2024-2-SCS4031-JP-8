@@ -144,7 +144,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import axios from 'axios'
 import RouteBar from './RouteBar.vue'
-import apiConfig from '@/utils/API/apiConfig'
+import apiConfig from '@/utils/apiConfig'
 import {
   WalkIcon,
   WalletIcon,

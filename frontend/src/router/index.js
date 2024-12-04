@@ -1,70 +1,59 @@
 /* eslint-disable */
 import { createRouter, createWebHashHistory } from 'vue-router'
-import BusInfo from '../views/BusInfoPage.vue'
-import BusSearchResults from '../views/BusSearchResultsPage.vue'
-import NaverMapView from '../views/MapTestPage/NaverMapView.vue'
+//import BusInfo from '../views/ATrash/BusInfoPage.vue'
+//import BusSearchResults from '../views/ATrash/BusSearchResultsPage.vue'
+//import NaverMapView from '../views/ATrash/MapTestPage/NaverMapView.vue'
 import { NaverMap } from 'vue3-naver-maps'
-import NaverLocationSearchView from '@/views/MapTestPage/NaverLocationSearchView.vue'
-import OdisayAPITestView from '@/views/MapTestPage/OdisayAPITestView.vue'
-import GeologicalAPITest from '@/views/MapTestPage/GeologicalAPITest.vue'
-import odi from '@/views/MapTestPage/odi.vue'
-import RouteSearchResultView from '@/views/MapTestPage/RouteSearchResultView.vue'
-import KakaoAPIView from '@/views/MapTestPage/kakaoAPIView.vue'
-import plus from '@/views/MapTestPage/plus.vue'
-import Mobiletest from '@/views/real/mobiletest.vue'
-import Kakaokeyword from '@/views/MapTestPage/kakaokeyword.vue'
-import gonggong from '@/views/real/gonggong.vue'
+//import NaverLocationSearchView from '@/views/ATrash/MapTestPage/NaverLocationSearchView.vue'
+//import OdisayAPITestView from '@/views/ATrash/MapTestPage/OdisayAPITestView.vue'
+//import GeologicalAPITest from '@/views/ATrash/MapTestPage/GeologicalAPITest.vue'
+//import odi from '@/views/ATrash/MapTestPage/odi.vue'
+//import RouteSearchResultView from '@/views/ATrash/MapTestPage/RouteSearchResultView.vue'
+//import KakaoAPIView from '@/views/ATrash/MapTestPage/kakaoAPIView.vue'
+//import plus from '@/views/ATrash/MapTestPage/plus.vue'
+//import Mobiletest from '@/views/ATrash/real/mobiletest.vue'
+//import Kakaokeyword from '@/views/ATrash/MapTestPage/kakaokeyword.vue'
+//import gonggong from '@/views/ATrash/real/gonggong.vue'
 
 //real
-import MainPage from '@/views/real/MainPage.vue'
-import SearchDeparturePage from '@/views/real/SearchDeparturePage.vue'
-import SearchDestinationPage from '@/views/real/SearchDestinationPage.vue'
-import BusSearchPage from '@/views/real/BusSearchPage.vue'
-import BusRouteDetailsPage from '@/views/real/BusRouteDetailsPage.vue'
-import DetailedRoutePage from '@/views/real/DetailedRoutePage.vue'
-import Gonggong from '@/views/real/gonggong.vue'
-import BusDetailInfo from '@/views/real/BusDetailInfo.vue'
-import BusDetailLocation from '@/views/real/BusDetailLocation.vue'
-import FinalPage from '@/views/real/test/FinalPage.vue'
-import Debugging from '@/views/real/test/Debugging.vue'
-import PathfindingPage from '@/views/real/PathfindingPage.vue'
-import PathDetail from '@/views/real/PathDetailPage.vue'
-import ResultPage from '@/views/real/test/ResultPage.vue'
-import NoBusPathDetailPage from '@/views/real/test/NoBusPathDetailPage.vue'
-import NoBusPathfindingPage from '@/views/real/test/NoBusPathfindingPage.vue'
+import MainPage from '@/views/Mainpage/MainPage.vue'
+import SearchDeparturePage from '@/views/SearchPage/SearchDeparturePage.vue'
+import SearchDestinationPage from '@/views/SearchPage/SearchDestinationPage.vue'
+//import BusSearchPage from '@/views/ATrash/real/BusSearchPage.vue'
+//import BusRouteDetailsPage from '@/views/ATrash/real/BusRouteDetailsPage.vue'
+//import DetailedRoutePage from '@/views/ATrash/real/DetailedRoutePage.vue'
+//import Gonggong from '@/views/ATrash/real/gonggong.vue'
+//import BusDetailInfo from '@/views/ATrash/real/BusDetailInfo.vue'
+import BusDetailLocation from '@/views/ResultPage/BusDetailPage/BusDetailLocation.vue'
+//import FinalPage from '@/views/ATrash/test/FinalPage.vue'
+//import Debugging from '@/views/ATrash/test/Debugging.vue'
+import PathfindingPage from '@/views/PathPage/PathfindingPage.vue'
+import PathDetail from '@/views/PathPage/PathDetailPage.vue'
+import ResultPage from '@/views/ResultPage/ResultPage.vue'
+import NoBusPathDetailPage from '@/views/NoBusPathPage/NoBusPathDetailPage.vue'
+import NoBusPathfindingPage from '@/views/NoBusPathPage/NoBusPathfindingPage.vue'
 
 const routes = [
-  { path: '/', component: MainPage }, // MainPage.vue
-  { path: '/search-departure', component: SearchDeparturePage }, // 출발지 검색
-  { path: '/search-destination', component: SearchDestinationPage }, // 도착지 검색
-  { path: '/bus-search', component: BusSearchPage }, // 버스 검색 페이지
+  { path: '/', name: 'MainPage', component: MainPage }, // MainPage.vue
   {
-    path: '/bus-route-details',
-    component: BusRouteDetailsPage,
-    props: (route) => ({
-      busNumber: route.query.busNumber,
-      departure: route.query.departure,
-      destination: route.query.destination
-    })
-  }, // 정류장 정보 페이지
+    path: '/search-departure',
+    name: 'SearchDeparturePage',
+    component: SearchDeparturePage
+  }, // 출발지 검색
   {
-    path: '/detailed-route',
-    component: DetailedRoutePage,
-    props: (route) => ({
-      departure: route.query.departure,
-      destination: route.query.destination,
-      stop: route.query.stop
-    })
-  }, // 상세 경로 페이지
+    path: '/search-destination',
+    name: 'SearchDestinationPage',
+    component: SearchDestinationPage
+  }, // 도착지 검색
   {
-    path: '/route',
-    name: 'RouteSearchResultView',
-    component: RouteSearchResultView
+    path: '/result',
+    name: 'ResultPage',
+    component: ResultPage
   },
   {
-    path: '/final',
-    name: 'FinalPage',
-    component: FinalPage
+    path: '/buslocation',
+    name: 'buslocation',
+    component: BusDetailLocation
   },
   {
     path: '/pathfinding',
@@ -77,11 +66,6 @@ const routes = [
     component: PathDetail
   },
   {
-    path: '/result',
-    name: 'ResultPage',
-    component: ResultPage
-  },
-  {
     path: '/nobusroutedetail',
     name: 'NoBusPathDetailPage',
     component: NoBusPathDetailPage
@@ -90,7 +74,38 @@ const routes = [
     path: '/nobusroute',
     name: 'NoBusPathfindingPage',
     component: NoBusPathfindingPage
-  },
+  }
+
+  //{ path: '/bus-search', component: BusSearchPage }, // 버스 검색 페이지
+  // {
+  //   path: '/bus-route-details',
+  //   component: BusRouteDetailsPage,
+  //   props: (route) => ({
+  //     busNumber: route.query.busNumber,
+  //     departure: route.query.departure,
+  //     destination: route.query.destination
+  //   })
+  // }, // 정류장 정보 페이지
+  // {
+  //   path: '/detailed-route',
+  //   component: DetailedRoutePage,
+  //   props: (route) => ({
+  //     departure: route.query.departure,
+  //     destination: route.query.destination,
+  //     stop: route.query.stop
+  //   })
+  // }, // 상세 경로 페이지
+  // {
+  //   path: '/route',
+  //   name: 'RouteSearchResultView',
+  //   component: RouteSearchResultView
+  // },
+  // {
+  //   path: '/final',
+  //   name: 'FinalPage',
+  //   component: FinalPage
+  // },
+
   // {
   //   path: '/',
   //   name: 'BusInfoPage',
@@ -115,36 +130,32 @@ const routes = [
   //   component: NaverLocationSearchView
   // },
 
-  {
-    path: '/geo',
-    name: 'GeologicalAPITest',
-    component: GeologicalAPITest
-  },
-  {
-    path: '/bus',
-    name: 'BusDetailInfo',
-    component: BusDetailInfo
-  },
-  {
-    path: '/odi',
-    name: 'odi',
-    component: odi
-  },
-  {
-    path: '/gong',
-    name: 'gong',
-    component: gonggong
-  },
-  {
-    path: '/buslocation',
-    name: 'buslocation',
-    component: BusDetailLocation
-  },
-  {
-    path: '/debugging',
-    name: 'debugging',
-    component: Debugging
-  }
+  // {
+  //   path: '/geo',
+  //   name: 'GeologicalAPITest',
+  //   component: GeologicalAPITest
+  // },
+  // {
+  //   path: '/bus',
+  //   name: 'BusDetailInfo',
+  //   component: BusDetailInfo
+  // },
+  // {
+  //   path: '/odi',
+  //   name: 'odi',
+  //   component: odi
+  // },
+  // {
+  //   path: '/gong',
+  //   name: 'gong',
+  //   component: gonggong
+  // },
+
+  // {
+  //   path: '/debugging',
+  //   name: 'debugging',
+  //   component: Debugging
+  // }
 
   // {
   //   path: '/kakao',
@@ -183,3 +194,4 @@ const router = createRouter({
 export default router
 
 //component: importedViews['HomeView'], // 자동 임포트 적용
+// import { ResultPage } from '@/views/real/ResultPage/ResultPage.vue'

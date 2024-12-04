@@ -38,7 +38,10 @@
 </template>
 
 <script setup>
-import { getBusRouteColor, getSubwayColor } from './TransportationColor.js'
+import {
+  getBusRouteColor,
+  getSubwayColor
+} from '../../utils/TransportationColor.js'
 
 const props = defineProps({
   route: Object

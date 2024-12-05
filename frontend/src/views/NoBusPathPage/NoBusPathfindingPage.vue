@@ -85,7 +85,7 @@
           </div>
           <div class="route-details">
             <div class="detail-item">
-              <WalkIcon class="icon" />
+              <Footprints class="icon" />
               <span class="value">{{
                 formatDistance(route.info.totalWalk)
               }}</span>
@@ -164,13 +164,13 @@ import axios from 'axios'
 import RouteBar from './RouteBar.vue'
 import apiConfig from '@/utils/apiConfig'
 import {
-  WalkIcon,
+  Footprints,
   WalletIcon,
   ArrowLeftRightIcon,
   MapPinIcon,
   FlagIcon,
   ArrowLeftIcon,
-  SubwayIcon,
+  TramFront,
   BusIcon
 } from 'lucide-vue-next'
 
@@ -328,7 +328,7 @@ const getMarkerClass = (segment) => {
 }
 
 const getSegmentIcon = (segment) => {
-  if (segment.trafficType === 1) return SubwayIcon
+  if (segment.trafficType === 1) return TramFront
   if (segment.trafficType === 2) return BusIcon
   return null
 }

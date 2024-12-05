@@ -40,7 +40,7 @@
 
     <div class="switch-button-container">
       <button @click="switchLocations" class="switch-button">
-        <ArrowsUpDownIcon class="switch-icon" />
+        <ArrowDownUp class="switch-icon" />
         출발지와 도착지 바꾸기
       </button>
     </div>
@@ -129,7 +129,7 @@ import {
   ClockIcon,
   XCircleIcon,
   ZapIcon,
-  ArrowsUpDownIcon
+  ArrowDownUp
 } from 'lucide-vue-next'
 
 const store = useStore()

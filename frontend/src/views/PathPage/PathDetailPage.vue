@@ -73,7 +73,7 @@
                   {{ getSegmentDetails(segment) }}
                 </div>
                 <div v-if="segment.trafficType === 3" class="walking-info">
-                  <WalkIcon size="16" class="walk-icon" />
+                  <Footprints size="16" class="walk-icon" />
                   <span>도보 {{ formatDistance(segment.distance) }}</span>
                 </div>
               </div>
@@ -108,7 +108,7 @@ import {
   ArrowLeftIcon,
   MapPinIcon,
   FlagIcon,
-  WalkIcon,
+  Footprints,
   TrainIcon,
   BusIcon
 } from 'lucide-vue-next'
@@ -449,7 +449,7 @@ const getSegmentIcon = (segment) => {
     case 2:
       return BusIcon
     case 3:
-      return WalkIcon
+      return Footprints
     default:
       return MapPinIcon
   }

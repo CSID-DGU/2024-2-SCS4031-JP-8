@@ -121,36 +121,54 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
       throw new Error('도착 정보가 없습니다.')
     }
 
+    // 실시간 도착 정보 설정
+    const firstBusTime = parseInt(
+      busArrivalItem.querySelector('predictTime1')?.textContent,
+      10
+    )
+    const secondBusTime = parseInt(
+      busArrivalItem.querySelector('predictTime2')?.textContent,
+      10
+    )
+
+    const firstBusSeats = parseInt(
+      busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
+      10
+    )
+    const secondBusSeats = parseInt(
+      busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
+      10
+    )
+
+    // 두 버스의 도착 시간 차이를 계산하고 합산
+    let combinedSeats = firstBusSeats
+    if (
+      firstBusTime !== null &&
+      secondBusTime !== null &&
+      Math.abs(firstBusTime - secondBusTime) <= 10
+    ) {
+      combinedSeats += secondBusSeats
+      console.log(
+        `[INFO] 도착 시간 차이가 10분 이내입니다. 여석 합산: ${combinedSeats}`
+      )
+    }
+
     arrivalInfo = {
       firstBus: {
         locationNo: parseInt(
           busArrivalItem.querySelector('locationNo1')?.textContent,
           10
         ),
-        predictTime: parseInt(
-          busArrivalItem.querySelector('predictTime1')?.textContent,
-          10
-        ),
-        remainSeats:
-          parseInt(
-            busArrivalItem.querySelector('remainSeatCnt1')?.textContent,
-            10
-          ) ?? 0
+        predictTime: firstBusTime,
+        remainSeats: combinedSeats // 합산된 여석 사용
       },
       secondBus: {
         locationNo: parseInt(
           busArrivalItem.querySelector('locationNo2')?.textContent,
           10
         ),
-        predictTime: parseInt(
-          busArrivalItem.querySelector('predictTime2')?.textContent,
-          10
-        ),
-        remainSeats:
-          parseInt(
-            busArrivalItem.querySelector('remainSeatCnt2')?.textContent,
-            10
-          ) ?? 0
+        predictTime: secondBusTime,
+        remainSeats: secondBusSeats
       }
     }
 
@@ -179,7 +197,7 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
   const dispatchCount = busRouteData[busNo]?.dispatchCount || 6
   arrivalInfo.firstBus.remainSeats = Math.max(
     0,
-    (60 - avgReboarding) / dispatchCount
+    (45 - avgReboarding) / dispatchCount
   )
 
   console.log(

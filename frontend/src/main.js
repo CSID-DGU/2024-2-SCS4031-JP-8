@@ -4,9 +4,9 @@ import './registerServiceWorker'
 import router from './router'
 import store from './store'
 import axios from 'axios'
-import './assets/styles/global.css'
 import { createNaverMap } from 'vue3-naver-maps'
-import apiConfig from './utils/API/apiConfig'
+import apiConfig from './utils/apiConfig'
+import '@fortawesome/fontawesome-free/css/all.css'
 
 // Vue 앱 생성
 const app = createApp(App)

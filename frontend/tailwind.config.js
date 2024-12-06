@@ -5,5 +5,9 @@ module.exports = {
   theme: {
     extend: {}
   },
-  plugins: []
+  plugins: [],
+  purge: [
+    './src/**/*.vue', // src 폴더 안의 모든 Vue 파일 포함
+    './public/**/*.html' // public 폴더의 HTML 파일들 포함
+  ]
 }

@@ -27,8 +27,10 @@
         </div>
       </div>
       <div class="request-time">
-        <span class="time-label">길찾기 요청 시각:</span>
-        <span class="time-value">{{ formattedRequestTime }}</span>
+        <span class="time-label">길찾기 요청 시각: </span>
+        <span class="time-value"
+          >{{ timeInfo.hour }}시 {{ timeInfo.minute }}분</span
+        >
       </div>
     </div>
 
@@ -159,6 +161,8 @@ import {
 const router = useRouter()
 const route = useRoute()
 const store = useStore()
+
+const timeInfo = computed(() => store.getters['time/getTime'])
 
 const loading = ref(false)
 const routes = ref([])
@@ -371,6 +375,9 @@ onMounted(async () => {
   console.log('[DEBUG] Starting search with:', departure.value, station.value)
 
   await searchTransitRoutes()
+  return {
+    timeInfo // 템플릿에서 사용 가능하도록 반환
+  }
 })
 </script>
 

@@ -74,9 +74,16 @@ async function fetchAverageReboarding(filePath, stationName, timeSlot, idx) {
  * @param {string} busNo - 노선 번호
  * @param {Object} timeInfo - 시간 정보 객체 (월, 일, 시, 분)
  * @param {number} idx
+ * @param {number} localStationId
  * @returns {Object} 실시간 데이터와 대체 데이터를 포함한 `arrivalInfo`
  */
-export async function fetchBusArrivalInfo(stationName, busNo, timeInfo, idx) {
+export async function fetchBusArrivalInfo(
+  stationName,
+  busNo,
+  timeInfo,
+  idx,
+  localStationId
+) {
   console.log('[INFO] Vuex에서 전달받은 데이터:', {
     stationName,
     busNo,
@@ -111,12 +118,17 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo, idx) {
   try {
     // 1. 실시간 API 호출
     console.log('[INFO] 실시간 도착 정보 API 호출 중...')
+    console.log('[DEBUG] 호출 파라미터:', {
+      serviceKey,
+      stationId: stationName,
+      routeId
+    })
     const response = await axios.get(
       'http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
       {
         params: {
           serviceKey,
-          stationId: stationName,
+          stationId: localStationId,
           routeId
         }
       }

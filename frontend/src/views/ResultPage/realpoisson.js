@@ -1,31 +1,37 @@
 import Papa from 'papaparse'
 
 // 포아송 확률 계산 함수
-function poissonProb(k, sigma, lambda) {
+function poissonProb(k, sigma, lam) {
+  console.log('[DEBUG] poissonProb 호출:', { k, sigma, lam })
   let prob = 0
   for (let i = k; i < sigma; i++) {
-    prob += (Math.exp(-lambda) * Math.pow(lambda, i)) / factorial(i)
+    prob += (Math.exp(-lam) * Math.pow(lam, i)) / factorial(i)
   }
+  console.log('[DEBUG] 최종 포아송 확률:', prob)
   return prob
+}
+
+// 팩토리얼 계산 함수
+function factorial(n) {
+  if (n === 0 || n === 1) return 1
+  const result = n * factorial(n - 1)
+  return result
 }
 
 // 정규분포 확률 계산 함수
-function normalProb(k, lambda) {
+function normalProb(k, lam) {
+  console.log('[DEBUG] normalProb 호출:', { k, lam })
   let prob = 0
   for (let i = 0; i < k; i++) {
-    prob += (Math.exp(-lambda) * Math.pow(lambda, i)) / factorial(i)
+    prob += (Math.exp(-lam) * Math.pow(lam, i)) / factorial(i)
   }
+  console.log('[DEBUG] 최종 정규분포 확률:', prob)
   return prob
 }
 
-// 팩토리얼 함수
-function factorial(n) {
-  if (n === 0 || n === 1) return 1
-  return n * factorial(n - 1)
-}
-
-// CSV 파일에서 정류장 순번별 평균 승차 인원 가져오기
-async function fetchAverageReboarding(filePath, idx, timeSlot) {
+// CSV 파일에서 정류장별 데이터를 로드하는 함수
+async function loadPassengerData(filePath) {
+  console.log('[INFO] loadPassengerData 호출:', { filePath })
   try {
     console.log(`[INFO] CSV 로드 시도: ${filePath}`)
     const response = await fetch(filePath)
@@ -38,27 +44,36 @@ async function fetchAverageReboarding(filePath, idx, timeSlot) {
       skipEmptyLines: true
     }).data
 
-    console.log('[DEBUG] CSV 파싱 결과:', parsedData)
+    const passengerData = {}
+    parsedData.forEach((row, index) => {
+      console.log(`[DEBUG] 처리 중인 row(${index}):`, row)
 
-    // "정류장순번" 열을 기준으로 데이터를 찾음
-    const stationData = parsedData.find(
-      (row) => parseInt(row['정류장순번'], 10) === idx
-    )
+      const stationSeq = parseInt(row['정류장순번'], 10)
+      if (isNaN(stationSeq)) {
+        console.warn(
+          `[WARN] 정류장순번이 유효하지 않음. 무시됨:`,
+          row['정류장순번']
+        )
+        return // 정류장순번이 숫자가 아니면 무시
+      }
 
-    // 해당 시간대의 평균 승차 인원을 계산
-    const avgReboarding =
-      stationData && stationData[timeSlot]
-        ? parseFloat(stationData[timeSlot]) || 0
-        : 0
+      if (passengerData[stationSeq]) {
+        console.warn(
+          `[WARN] 중복된 정류장순번(${stationSeq})이 발견됨. 기존 데이터가 덮어씌워질 수 있습니다.`
+        )
+      }
 
-    console.log(
-      `[INFO] 순번 ${idx}의 ${timeSlot} 평균 승차 인원: ${avgReboarding}`
-    )
+      passengerData[stationSeq] = row
+      console.log(`[DEBUG] 추가된 정류장 데이터:`, { stationSeq, data: row })
+    })
 
-    return avgReboarding
+    console.log('[INFO] 최종 로드된 passengerData:', passengerData)
+
+    console.log('[DEBUG] 로드된 승객 데이터:', passengerData)
+    return passengerData
   } catch (error) {
     console.error('[ERROR] CSV 로드 실패:', error)
-    return 0 // 실패 시 0 반환
+    return {}
   }
 }
 
@@ -70,99 +85,120 @@ async function calculateBoardingProbability({
   filePath, // CSV 파일 경로
   timeSlot, // 시간대 정보
   stations, // 정류장 정보 목록
-  transidx // 특정 정류장 순번
+  transidx, // 특정 정류장 순번
+  searchTime
 }) {
-  console.log('[INFO] Poisson 계산 시작', {
+  console.log('[INFO] calculateBoardingProbability 호출:', {
     arrivalInfo,
     startSeq,
     endSeq,
     filePath,
     timeSlot,
-    stations,
-    transidx
+    transidx,
+    searchTime
   })
 
-  // 특정 정류장 순번 데이터 로드
-  const avgReboarding = await fetchAverageReboarding(
-    filePath,
-    transidx,
-    timeSlot
-  )
+  const currentBus = transidx
+  console.log('[DEBUG] currentBus:', currentBus)
 
-  if (avgReboarding === 0) {
-    console.warn(`[WARN] 정류장순번 ${transidx}에 대한 데이터가 없습니다.`)
-    return []
-  }
+  let remainSeat = arrivalInfo
+  console.log('[DEBUG] 초기 남은 좌석 수:', remainSeat)
 
-  let remainSeat = arrivalInfo // 남은 좌석 초기값
-  const probabilities = []
-  const timeInterval = 10 // 배차 간격
+  let realtimeSlot = timeSlot
+  let realsearchTime = searchTime // 분
+  console.log('[DEBUG] 초기 시간대 및 분:', { realtimeSlot, realsearchTime })
+
+  const passengerData = await loadPassengerData(filePath)
+  const targetStation = endSeq
+
+  console.log('[DEBUG] 대상 정류장 순번:', { startSeq, targetStation })
+
+  const stationList = Object.keys(passengerData)
+  const relevantStations = stationList.slice(currentBus, targetStation + 1)
+  console.log('[DEBUG] 대상 정류장 목록:', relevantStations)
+
+  const timeInterval = 10 // 배차 간격 (분)
   const totalBus = 60 / timeInterval // 시간당 배차 수
+  console.log('[DEBUG] 배차 간격 및 시간당 배차 수:', {
+    timeInterval,
+    totalBus
+  })
 
-  for (let seq = startSeq; seq <= endSeq; seq++) {
-    const station = stations.find((st) => st.idx === seq)
-    if (!station) {
-      console.warn(`[WARN] 순번 ${seq}에 해당하는 정류장이 없습니다.`)
-      continue
-    }
+  const probabilities = []
+  let cumulativeProb = 1.0
 
-    const totalPass = Math.max(1, avgReboarding * totalBus) // 시간당 평균 환산
+  for (const station of relevantStations) {
+    console.log('[DEBUG] 현재 처리 중인 정류장:', station)
+
+    console.log('[DEBUG] 현재 처리 중인 정류장 데이터:', {
+      station,
+      passengerDataEntry: passengerData[station],
+      timeKey: `${realtimeSlot}`,
+      matchedValue: passengerData[station]?.[`${realtimeSlot}`]
+    })
+    let totalPass = parseFloat(passengerData[station]?.[`${realtimeSlot}`] || 0)
+    console.log('[DEBUG] totalPass 계산:', {
+      station,
+      timeKey: `${realtimeSlot}`,
+      matchedValue: passengerData[station]?.[`${realtimeSlot}`],
+      totalPass
+    })
+
+    const avgPass = Math.max(1, Math.floor(totalPass / totalBus))
+    console.log('[DEBUG] avgPass 계산:', {
+      totalPass,
+      totalBus,
+      avgPass
+    })
+
+    const busesUntilNow = Math.max(1, Math.floor(realsearchTime / timeInterval))
+    console.log('[DEBUG] busesUntilNow:', busesUntilNow)
+
+    const passPerTime = Math.max(1, avgPass) * busesUntilNow
+    console.log('[DEBUG] passPerTime:', passPerTime)
+
     const targetPass = Math.max(0, Math.floor(totalPass - remainSeat))
+    console.log('[DEBUG] targetPass:', targetPass)
 
     let stationProb
     if (
-      timeSlot.includes('7시') ||
-      timeSlot.includes('8시') ||
-      timeSlot.includes('9시')
+      (7 <= realtimeSlot && realtimeSlot < 10) ||
+      (17 <= realtimeSlot && realtimeSlot < 20)
     ) {
-      stationProb = poissonProb(targetPass, totalPass, remainSeat)
+      stationProb = poissonProb(targetPass, totalPass, passPerTime)
     } else {
-      stationProb = normalProb(remainSeat, totalPass)
+      stationProb = normalProb(remainSeat, passPerTime)
     }
 
-    probabilities.push({
-      stationName: station.stationName,
-      seq,
-      probability: stationProb * 100 // 퍼센트로 변환
-    })
+    console.log('[DEBUG] stationProb:', stationProb)
 
-    remainSeat -= avgReboarding
-    remainSeat = Math.max(remainSeat, 0) // 음수 방지
+    cumulativeProb *= stationProb
+    probabilities.push({ station, probability: cumulativeProb })
+
+    if (remainSeat > 0) {
+      remainSeat -= avgPass
+      remainSeat = Math.max(0, remainSeat)
+    }
+    console.log('[DEBUG] 업데이트된 남은 좌석 수:', remainSeat)
+
+    realsearchTime += timeInterval
+    if (realsearchTime >= 60) {
+      realsearchTime -= 60
+      realtimeSlot += 1
+    }
+    console.log('[DEBUG] 업데이트된 시간:', {
+      realtimeSlot,
+      realsearchTime
+    })
   }
 
   console.log('[INFO] 계산된 확률:', probabilities)
   return probabilities
 }
 
-// // 실행 예시
-// ;(async () => {
-//   const csvUrl = '/path/to/5000B_week_pass.csv' // CSV 파일 경로
-//   try {
-//     const passengerData = await loadPassengerData(csvUrl)
-//     const routeId = '1112'
-//     const targetStation = 44
-//     const currentTime = new Date()
-
-//     const result = await calculateBoardingProbability(
-//       routeId,
-//       targetStation,
-//       currentTime,
-//       passengerData
-//     )
-
-//     console.log('승차 확률:')
-//     result.forEach(({ station, probability }) => {
-//       console.log(`${station}: ${(probability * 100).toFixed(2)}%`)
-//     })
-//   } catch (error) {
-//     console.error('오류 발생:', error)
-//   }
-// })()
-
 export {
   poissonProb,
-  normalProb,
   factorial,
-  fetchAverageReboarding,
+  loadPassengerData,
   calculateBoardingProbability
 }

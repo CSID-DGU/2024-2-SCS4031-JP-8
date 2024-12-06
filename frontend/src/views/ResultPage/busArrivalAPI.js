@@ -19,15 +19,16 @@ function getDayType(month, day) {
 /**
  * CSV 파일에서 정류장 순번별 평균 재차 인원 가져오기
  * @param {string} filePath - CSV 파일 경로
+ * @param {string} stationName - 정류장명 (로그용)
  * @param {number} idx - 정류장 순번
  * @param {string} timeSlot - 시간대 (예: '17시')
  * @returns {number} 평균 재차 인원 (정류장 데이터가 없으면 0 반환)
  */
-async function fetchAverageReboarding(filePath, idx, timeSlot) {
+async function fetchAverageReboarding(filePath, stationName, timeSlot, idx) {
   try {
-    // 넘겨받은 파라미터 출력
-    console.log('[INFO] fetchAverageReboarding 함수 호출', {
+    console.log('[INFO] fetchAverageReboarding 호출', {
       filePath,
+      stationName, // 로그용
       idx,
       timeSlot
     })
@@ -57,7 +58,7 @@ async function fetchAverageReboarding(filePath, idx, timeSlot) {
         : 0
 
     console.log(
-      `[INFO] 순번 ${idx}의 ${timeSlot} 평균 재차 인원!: ${avgReboarding}`
+      `[INFO] 순번 ${idx} (${stationName})의 ${timeSlot} 평균 재차 인원: ${avgReboarding}`
     )
 
     return avgReboarding
@@ -72,13 +73,15 @@ async function fetchAverageReboarding(filePath, idx, timeSlot) {
  * @param {string} stationName - 정류장명
  * @param {string} busNo - 노선 번호
  * @param {Object} timeInfo - 시간 정보 객체 (월, 일, 시, 분)
+ * @param {number} idx
  * @returns {Object} 실시간 데이터와 대체 데이터를 포함한 `arrivalInfo`
  */
-export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
+export async function fetchBusArrivalInfo(stationName, busNo, timeInfo, idx) {
   console.log('[INFO] Vuex에서 전달받은 데이터:', {
     stationName,
     busNo,
-    timeInfo
+    timeInfo,
+    idx
   })
 
   const serviceKey =
@@ -200,14 +203,12 @@ export async function fetchBusArrivalInfo(stationName, busNo, timeInfo) {
   const avgReboarding = await fetchAverageReboarding(
     filePath,
     stationName,
-    timeSlot
+    timeSlot,
+    idx
   )
 
   const dispatchCount = busRouteData[busNo]?.dispatchCount || 6
-  arrivalInfo.firstBus.remainSeats = Math.max(
-    0,
-    (45 - avgReboarding) / dispatchCount
-  )
+  arrivalInfo.firstBus.remainSeats = Math.max(0, 45 - avgReboarding)
 
   console.log(
     '[INFO] Poisson 계산으로 전달할 여석 값 (대체):',

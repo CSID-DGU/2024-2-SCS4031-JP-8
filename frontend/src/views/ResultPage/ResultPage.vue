@@ -619,13 +619,15 @@ export default {
             stationName: firstStation.stationName,
             firstStationidx: firstStation.idx,
             busNo: route.busNo,
-            timeInfo: timeInfo.value
+            timeInfo: timeInfo.value,
+            localStationID: firstStation.localStationID
           })
           const arrivalData = await fetchBusArrivalInfo(
             firstStation.stationName,
             route.busNo,
             timeInfo.value,
-            firstStation.idx
+            firstStation.idx,
+            firstStation.localStationID
           )
 
           arrivalInfo.value = arrivalData

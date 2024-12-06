@@ -877,25 +877,25 @@ export default {
       console.log('[INFO] CSV 파일 경로:', filePath.value)
     }
 
-    const calculateProbabilityForStation = (idx) => {
-      const station = filteredStations.value.find((s) => s.idx === idx)
-      if (!station) return 0
+    // const calculateProbabilityForStation = (idx) => {
+    //   const station = filteredStations.value.find((s) => s.idx === idx)
+    //   if (!station) return 0
 
-      const probability = selectedStations.value.find((s) => s.seq === idx)
-      return probability ? probability.probability : 0
-    }
+    //   const probability = selectedStations.value.find((s) => s.seq === idx)
+    //   return probability ? probability.probability : 0
+    // }
 
-    const goToNextPage = (station) => {
-      router.push({
-        name: 'PathfindingPage',
-        query: {
-          stationName: station.stationName,
-          x: station.x,
-          y: station.y,
-          stationID: station.stationID
-        }
-      })
-    }
+    // const goToNextPage = (station) => {
+    //   router.push({
+    //     name: 'PathfindingPage',
+    //     query: {
+    //       stationName: station.stationName,
+    //       x: station.x,
+    //       y: station.y,
+    //       stationID: station.stationID
+    //     }
+    //   })
+    // }
 
     const goBack = () => {
       router.go(-1)
@@ -1041,8 +1041,8 @@ export default {
       selectedStations,
       busBasicInfo,
       arrivalInfo,
-      calculateProbabilityForStation,
-      goToNextPage,
+      //calculateProbabilityForStation,
+      //goToNextPage,
       goBack,
       refreshBusInfo,
       checkBusLocation,

@@ -319,6 +319,8 @@ import { calculateBoardingProbability } from './realpoisson'
 export default {
   setup() {
     const store = useStore()
+    const searchTime = ref(null)
+
     const router = useRouter()
 
     const fromLocation = computed(() => store.state.departure.departure.name)
@@ -613,12 +615,19 @@ export default {
         const firstStation = filteredStations.value[0]
         if (firstStation) {
           console.log('[INFO] 첫 정류장:', firstStation)
-
+          console.log('[DEBUG] fetchBusArrivalInfo 호출 파라미터@@@@:', {
+            stationName: firstStation.stationName,
+            firstStationidx: firstStation.idx,
+            busNo: route.busNo,
+            timeInfo: timeInfo.value
+          })
           const arrivalData = await fetchBusArrivalInfo(
             firstStation.stationName,
             route.busNo,
-            timeInfo.value
+            timeInfo.value,
+            firstStation.idx
           )
+
           arrivalInfo.value = arrivalData
           lastFetchTime.value = new Date()
 
@@ -648,7 +657,8 @@ export default {
             filePath: filePath.value,
             timeSlot: timeSlot.value,
             stations,
-            transidx: firstStation.idx
+            transidx: firstStation.idx,
+            searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
           })
 
           console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
@@ -930,6 +940,7 @@ export default {
       return arrivalInfo.value?.firstBus?.seats || 0 // 조건을 만족하지 않으면 첫 번째 버스의 여석 반환
     }
 
+    /// 이거 아님!!!!!!!!!!!!!!!!!!!!!!!!
     const refreshBusInfo = async () => {
       if (selectedRoute.value) {
         const firstStation = filteredStations.value[0]
@@ -1027,10 +1038,17 @@ export default {
 
     onMounted(() => {
       getCurrentPosition()
+      const timeData = store.getters['time/getTime']
+      console.log('[DEBUG] Vuex에서 가져온 시간 데이터:', timeData)
+
+      searchTime.value = timeData.minute
+      console.log('[DEBUG] Vuex에서 설정한 searchTime:', searchTime.value)
       searchTransitRoutes()
     })
 
     return {
+      searchTime, // 템플릿에서 필요하면 반환
+
       fromLocation,
       toLocation,
       loading,

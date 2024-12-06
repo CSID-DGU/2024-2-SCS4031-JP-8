@@ -171,9 +171,15 @@ async function calculateBoardingProbability({
     }
 
     console.log('[DEBUG] stationProb:', stationProb)
+    // 확률 저장 및 로그 출력
+    console.log('[DEBUG] 저장할 확률 데이터:', {
+      station,
+      probability: cumulativeProb
+    })
 
     cumulativeProb *= stationProb
     probabilities.push({ station, probability: cumulativeProb })
+    console.log('[DEBUG] 현재까지의 확률 배열:', probabilities)
 
     if (remainSeat > 0) {
       remainSeat -= avgPass

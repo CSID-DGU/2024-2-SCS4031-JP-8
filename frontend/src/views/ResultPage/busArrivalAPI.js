@@ -17,14 +17,21 @@ function getDayType(month, day) {
 }
 
 /**
- * CSV 파일에서 정류장별 평균 재차 인원 가져오기
+ * CSV 파일에서 정류장 순번별 평균 재차 인원 가져오기
  * @param {string} filePath - CSV 파일 경로
- * @param {string} stationName - 정류장명
+ * @param {number} idx - 정류장 순번
  * @param {string} timeSlot - 시간대 (예: '17시')
  * @returns {number} 평균 재차 인원 (정류장 데이터가 없으면 0 반환)
  */
-async function fetchAverageReboarding(filePath, stationName, timeSlot) {
+async function fetchAverageReboarding(filePath, idx, timeSlot) {
   try {
+    // 넘겨받은 파라미터 출력
+    console.log('[INFO] fetchAverageReboarding 함수 호출', {
+      filePath,
+      idx,
+      timeSlot
+    })
+
     console.log(`[INFO] CSV 로드 시도: ${filePath}`)
     const response = await fetch(filePath)
     const csvText = await response.text()
@@ -38,17 +45,19 @@ async function fetchAverageReboarding(filePath, stationName, timeSlot) {
 
     console.log('[DEBUG] CSV 파싱 결과:', parsedData)
 
+    // "정류장순번" 열을 기준으로 데이터를 찾음
     const stationData = parsedData.find(
-      (row) => row['정류장명'] === stationName
+      (row) => parseInt(row['정류장순번'], 10) === idx
     )
 
+    // 해당 시간대의 평균 재차 인원을 계산
     const avgReboarding =
       stationData && stationData[timeSlot]
         ? parseFloat(stationData[timeSlot]) || 0
         : 0
 
     console.log(
-      `[INFO] ${stationName}의 ${timeSlot} 평균 재차 인원: ${avgReboarding}`
+      `[INFO] 순번 ${idx}의 ${timeSlot} 평균 재차 인원!: ${avgReboarding}`
     )
 
     return avgReboarding

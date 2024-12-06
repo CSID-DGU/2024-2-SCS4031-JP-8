@@ -314,13 +314,7 @@ import apiConfig from '@/utils/apiConfig'
 import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
 import { busRouteData } from './busData'
-import { calculateBoardingProbability } from './poisson'
-import {
-  calculateBoardingProbability as realPoissonProbability,
-  poissonProb,
-  normalProb,
-  factorial
-} from './realpoisson.js'
+import { calculateBoardingProbability } from './realpoisson'
 
 export default {
   setup() {
@@ -621,7 +615,7 @@ export default {
           console.log('[INFO] 첫 정류장:', firstStation)
 
           const arrivalData = await fetchBusArrivalInfo(
-            firstStation.localStationID,
+            firstStation.stationName,
             route.busNo,
             timeInfo.value
           )
@@ -653,7 +647,8 @@ export default {
             endSeq,
             filePath: filePath.value,
             timeSlot: timeSlot.value,
-            stations
+            stations,
+            transidx: firstStation.idx
           })
 
           console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
@@ -941,6 +936,7 @@ export default {
         if (firstStation) {
           arrivalInfo.value = await fetchBusArrivalInfo(
             firstStation.localStationID,
+            firstStation.idx,
             selectedRoute.value.busNo,
             timeInfo.value
           )

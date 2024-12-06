@@ -48,6 +48,12 @@
             <span class="location-name">{{ toLocation }}</span>
           </div>
         </div>
+        <div class="time-info">
+          <span
+            >길찾기 요청 시각: {{ vuextimeInfo.hour }}시
+            {{ vuextimeInfo.minute }}분</span
+          >
+        </div>
       </div>
 
       <h3 class="section-title">
@@ -118,8 +124,9 @@
             :key="station.stationID"
             class="station-timeline-item"
             :class="{
-              'high-probability': isHighProbability(station.idx),
-              'low-probability': !isHighProbability(station.idx),
+              'low-probability': isHighProbability(station.idx) === '낮음',
+              'medium-probability': isHighProbability(station.idx) === '보통',
+              'high-probability': isHighProbability(station.idx) === '높음',
               recommended: isHighestProbability(station.idx),
               first: index === 0,
               last: index === sortedStations.length - 1
@@ -141,7 +148,7 @@
                 </h4>
                 <div class="station-probability">
                   <svg
-                    v-if="isHighProbability(station.idx)"
+                    v-if="isHighProbability(station.idx) === '높음'"
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="24"
@@ -157,7 +164,7 @@
                     <polyline points="17 6 23 6 23 12"></polyline>
                   </svg>
                   <svg
-                    v-else
+                    v-else-if="isHighProbability(station.idx) === '낮음'"
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="24"
@@ -172,17 +179,49 @@
                     <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                     <polyline points="17 18 23 18 23 12"></polyline>
                   </svg>
-                  {{ isHighProbability(station.idx) ? '높음' : '낮음' }}
+                  <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-trending-neutral"
+                  >
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                  </svg>
+                  {{ isHighProbability(station.idx) }}
                 </div>
               </div>
               <p class="station-description">
-                {{ station.stationName }} 정류장
+                {{ station.stationID }} ({{
+                  station.stationDirection === 2 ? '상행' : '하행'
+                }})
+              </p>
+
+              <p
+                v-if="index === sortedStations.length - 1"
+                class="final-station-label"
+              >
+                일반 지도 기본 정류장
               </p>
               <div
                 class="bus-arrival-info"
-                :class="{ 'no-info': !arrivalInfo }"
+                :class="{
+                  'no-info':
+                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                }"
               >
-                <div v-if="!arrivalInfo" class="no-arrival-info">
+                <div
+                  v-if="
+                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                  "
+                  class="no-arrival-info"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     class="info-icon"
@@ -199,7 +238,11 @@
                   </svg>
                   <p class="info-text">도착정보없음</p>
                   <p class="info-subtext">
-                    현재 도착 정보를 이용할 수 없습니다.
+                    {{
+                      isRealTimeData
+                        ? '현재 도착 정보를 이용할 수 없습니다.'
+                        : '예측 결과는 실시간 도착정보를 제공하지 않습니다.'
+                    }}
                   </p>
                 </div>
                 <div v-else>
@@ -218,7 +261,8 @@
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                     <span
-                      >첫 번째 버스: {{ arrivalInfo.firstBus.time }}분 후</span
+                      >첫 번째 버스:
+                      {{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -237,7 +281,9 @@
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <span>여석: {{ arrivalInfo.firstBus.seats }}</span>
+                    <span
+                      >여석: {{ station.arrivalInfo[0]?.firstBus.seats }}</span
+                    >
                   </div>
                   <div class="bus-info">
                     <svg
@@ -254,7 +300,8 @@
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                     <span
-                      >두 번째 버스: {{ arrivalInfo.secondBus.time }}분 후</span
+                      >두 번째 버스:
+                      {{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -273,7 +320,9 @@
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <span>여석: {{ arrivalInfo.secondBus.seats }}</span>
+                    <span
+                      >여석: {{ station.arrivalInfo[0]?.secondBus.seats }}</span
+                    >
                   </div>
                 </div>
               </div>
@@ -306,7 +355,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { watch, ref, computed, onMounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -322,6 +371,7 @@ export default {
     const searchTime = ref(null)
 
     const router = useRouter()
+    const vuextimeInfo = computed(() => store.getters['time/getTime'])
 
     const fromLocation = computed(() => store.state.departure.departure.name)
     const toLocation = computed(() => store.state.destination.destination.name)
@@ -651,7 +701,16 @@ export default {
           }
 
           console.log('[INFO] 마지막 정류장 순번:', endSeq)
-
+          console.log('[INFO] calculateBoardingProbability 호출 파라미터:', {
+            arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
+            startSeq: filteredStations.value[0]?.idx,
+            endSeq,
+            filePath: filePath.value,
+            timeSlot: timeSlot.value,
+            stations,
+            transidx: firstStation.idx,
+            searchTime: searchTime.value
+          })
           selectedStations.value = await calculateBoardingProbability({
             arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
             startSeq: filteredStations.value[0]?.idx,
@@ -664,7 +723,23 @@ export default {
           })
 
           console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
+          // selectedStations와 filteredStations의 idx를 연결
+          selectedStations.value = selectedStations.value.map(
+            (station, index) => {
+              const matchingStation = filteredStations.value.find(
+                (filtered) => filtered.idx === station.station
+              )
+              return {
+                ...station,
+                idx: matchingStation ? matchingStation.idx : station.station
+              }
+            }
+          )
 
+          console.log(
+            '[DEBUG] 매핑 후 selectedStations:',
+            selectedStations.value
+          )
           // 지도 초기화 및 마커 추가
           await nextTick()
           initializeMap()
@@ -674,57 +749,101 @@ export default {
         console.error('노선 선택 오류:', error)
       }
     }
+
     const fetchArrivalInfoForStations = async () => {
       try {
-        for (const station of selectedStations.value) {
-          const { localStationID: stationId } = station // 정류장의 localStationID 사용
-          const routeId = busRouteData[selectedRoute.value.busNo]?.routeId // busRouteData에서 routeId 가져오기
+        const promises = filteredStations.value.map(async (station) => {
+          const { localStationID: stationId, stationName } = station
+
+          if (!stationId) {
+            console.warn(
+              `[WARN] localStationID가 없습니다. 정류장: ${stationName}`
+            )
+            station.arrivalInfo = null
+            return
+          }
+
+          const routeId = busRouteData[selectedRoute.value.busNo]?.routeId
           const serviceKey =
-            'EVTsGjdsoUlBtJTpdh%2FitgFJXzeeNK%2FBP4lN8my%2Bi9AaoLGNln1kqRcyVP7CVRY8GsiXkX%2BOMl2HviEvq6hlfQ%3D%3D' // 인증키
+            'EVTsGjdsoUlBtJTpdh/itgFJXzeeNK/BP4lN8my+i9AaoLGNln1kqRcyVP7CVRY8GsiXkX+OMl2HviEvq6hlfQ=='
 
           if (!routeId) {
             console.error(
               `[ERROR] routeId를 찾을 수 없습니다. 노선 번호: ${selectedRoute.value.busNo}`
             )
-            continue
+            station.arrivalInfo = null
+            return
           }
 
           const url = `http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem`
-          const params = {
-            serviceKey,
-            stationId,
-            routeId
-          }
+          const params = { serviceKey, stationId, routeId }
 
-          console.log(`[DEBUG] API 호출: 정류장 ${stationId}, 노선 ${routeId}`)
+          console.log(
+            `[DEBUG] API 호출: 정류장 ${stationId} (${stationName}), 노선 ${routeId}`
+          )
 
-          const response = await axios.get(url, { params })
-          const data = response.data
+          try {
+            const response = await axios.get(url, {
+              params,
+              responseType: 'text'
+            }) // XML 응답 처리
+            const parser = new DOMParser()
+            const xmlDoc = parser.parseFromString(
+              response.data,
+              'application/xml'
+            )
 
-          if (data?.msgHeader?.resultCode === '0') {
-            console.log(`[INFO] 정류장 ${stationId} 도착 정보:`, data)
-            station.arrivalInfo = {
-              firstBus: {
-                time: data.predictTime1,
-                seats: data.remainSeatCnt1,
-                plate: data.plateNo1
-              },
-              secondBus: {
-                time: data.predictTime2,
-                seats: data.remainSeatCnt2,
-                plate: data.plateNo2
-              }
+            // XML에서 필요한 데이터 추출
+            const resultCode = xmlDoc.querySelector(
+              'msgHeader > resultCode'
+            )?.textContent
+            const resultMessage = xmlDoc.querySelector(
+              'msgHeader > resultMessage'
+            )?.textContent
+            const busArrivalItems = xmlDoc.querySelectorAll(
+              'msgBody > busArrivalItem'
+            )
+
+            if (resultCode === '0' && busArrivalItems.length > 0) {
+              station.arrivalInfo = Array.from(busArrivalItems).map((item) => ({
+                stationId: item.querySelector('stationId')?.textContent || null,
+                firstBus: {
+                  time: item.querySelector('predictTime1')?.textContent || null,
+                  seats:
+                    item.querySelector('remainSeatCnt1')?.textContent || null,
+                  plate: item.querySelector('plateNo1')?.textContent || null
+                },
+                secondBus: {
+                  time: item.querySelector('predictTime2')?.textContent || null,
+                  seats:
+                    item.querySelector('remainSeatCnt2')?.textContent || null,
+                  plate: item.querySelector('plateNo2')?.textContent || null
+                }
+              }))
+
+              console.log(
+                `[INFO] 정류장 ${stationId} 도착 정보 저장 완료:`,
+                station.arrivalInfo
+              )
+            } else {
+              console.warn(
+                `[WARN] 정류장 ${stationId} 데이터 없음: ${
+                  resultMessage || '알 수 없는 오류'
+                }`
+              )
+              station.arrivalInfo = null
             }
-          } else {
-            console.warn(
-              `[WARN] 정류장 ${stationId} 데이터 없음:`,
-              data?.msgHeader?.resultMessage || '알 수 없는 오류'
+          } catch (apiError) {
+            console.error(
+              `[ERROR] 정류장 ${stationId} API 호출 오류:`,
+              apiError
             )
             station.arrivalInfo = null
           }
-        }
+        })
 
-        console.log('[INFO] 모든 정류장 도착 정보:', selectedStations.value)
+        await Promise.all(promises)
+        console.log('[INFO] 모든 정류장 도착 정보:', filteredStations.value)
       } catch (error) {
         console.error('[ERROR] 정류장 도착 정보 호출 중 오류:', error)
       }
@@ -733,73 +852,81 @@ export default {
     const initializeMap = () => {
       if (!filteredStations.value.length) return
 
+      console.log('[INFO] 지도 초기화 시작')
+
       const firstStation = filteredStations.value[0]
       const lastStation =
         filteredStations.value[filteredStations.value.length - 1]
+
+      console.log('[DEBUG] 첫 번째 정류장:', firstStation)
+      console.log('[DEBUG] 마지막 정류장:', lastStation)
 
       const mapOptions = {
         center: new naver.maps.LatLng(
           (parseFloat(firstStation.y) + parseFloat(lastStation.y)) / 2,
           (parseFloat(firstStation.x) + parseFloat(lastStation.x)) / 2
         ),
-        zoom: 13,
+        zoom: 12,
         zoomControl: false,
         zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT }
       }
 
       map.value = new naver.maps.Map('map', mapOptions)
-
-      // 현재 위치 마커 추가
-      if (currentPosition.value) {
-        const currentPositionMarker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(
-            currentPosition.value.lat,
-            currentPosition.value.lng
-          ),
-          map: map.value,
-          icon: {
-            content: `
-              <div style="
-                background: #4285F4;
-                border: 2px solid #FFF;
-                border-radius: 50%;
-                width: 16px;
-                height: 16px;
-                box-shadow: 0 0 5px rgba(0,0,0,0.3);
-              "></div>
-            `,
-            anchor: new naver.maps.Point(8, 8)
-          }
-        })
-        markers.value.push(currentPositionMarker)
-      }
-
-      // 출발지 마커 추가
-      const departureCoords = store.state.departure.departure.coordinates
-      if (departureCoords) {
-        const departureMarker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(departureCoords.y, departureCoords.x),
-          map: map.value,
-          icon: {
-            content: `
-              <div style="
-                background: #FF5722;
-                color: #fff;
-                padding: 5px 10px;
-                border-radius: 5px;
-                font-weight: bold;
-                font-size: 12px;
-              ">출발</div>
-            `,
-            anchor: new naver.maps.Point(30, 15)
-          }
-        })
-        markers.value.push(departureMarker)
-      }
+      console.log('[INFO] 지도 생성 완료')
 
       // 기존 마커 제거
       markers.value.forEach((marker) => marker.setMap(null))
       markers.value = []
+
+      // 출발지 마커 추가
+      const departureCoords = store.state.departure.departure.coordinates
+      console.log('[DEBUG] 출발지 좌표:', departureCoords)
+
+      const bounds = new naver.maps.LatLngBounds() // 지도 경계를 위한 Bounds 객체 추가
+
+      if (departureCoords) {
+        try {
+          const departureMarker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(
+              departureCoords.y,
+              departureCoords.x
+            ),
+            map: map.value,
+            icon: {
+              content: `
+        <div style="
+          background: #FF5722;
+          color: #fff;
+          padding: 10px;
+          border-radius: 50%;
+          font-weight: bold;
+          font-size: 14px;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        ">
+          출발
+        </div>
+      `,
+              anchor: new naver.maps.Point(15, 15) // 동일 anchor 설정
+            }
+          })
+          markers.value.push(departureMarker)
+
+          // **출발지 좌표를 Bounds에 추가**
+          bounds.extend(
+            new naver.maps.LatLng(departureCoords.y, departureCoords.x)
+          )
+          console.log('[INFO] 출발지 마커 추가 완료')
+        } catch (error) {
+          console.error('[ERROR] 출발지 마커 추가 중 오류 발생:', error)
+        }
+      } else {
+        console.warn('[WARN] 출발지 좌표가 없습니다. 마커를 추가하지 않습니다.')
+      }
 
       // 새 마커 추가 및 라인 그리기
       const path = []
@@ -819,23 +946,23 @@ export default {
           map: map.value,
           icon: {
             content: `
-              <div style="
-                background: ${markerColor};
-                color: #fff;
-                padding: 10px;
-                border-radius: 50%;
-                font-weight: bold;
-                font-size: 14px;
-                width: 30px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-              ">
-                ${index + 1}
-              </div>
-            `,
+      <div style="
+        background: ${markerColor};
+        color: #fff;
+        padding: 10px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 14px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      ">
+        ${index + 1}
+      </div>
+    `,
             anchor: new naver.maps.Point(15, 15)
           }
         })
@@ -846,6 +973,9 @@ export default {
           position: position,
           map: map.value
         })
+
+        // **정류장 좌표를 Bounds에 추가**
+        bounds.extend(position)
 
         markers.value.push(marker)
       })
@@ -859,12 +989,11 @@ export default {
         strokeOpacity: 0.8
       })
 
-      const bounds = new naver.maps.LatLngBounds()
-      filteredStations.value.forEach((station) => {
-        bounds.extend(new naver.maps.LatLng(station.y, station.x))
-      })
+      // **Bounds를 지도에 적용**
       map.value.fitBounds(bounds)
+      console.log('[INFO] 지도 경계 설정 완료')
     }
+
     const zoomIn = () => {
       if (map.value) {
         map.value.setZoom(map.value.getZoom() + 1)
@@ -944,24 +1073,18 @@ export default {
 
     /// 이거 아님!!!!!!!!!!!!!!!!!!!!!!!!
     const refreshBusInfo = async () => {
-      if (selectedRoute.value) {
-        const firstStation = filteredStations.value[0]
-        if (firstStation) {
-          arrivalInfo.value = await fetchBusArrivalInfo(
-            firstStation.localStationID,
-            firstStation.idx,
-            selectedRoute.value.busNo,
-            timeInfo.value
-          )
-
-          // 합산된 여석 계산
-          const combinedSeats = calculateCombinedSeats()
-          console.log(
-            `[INFO] 정류장 ${firstStation.stationName}의 합산된 여석: ${combinedSeats}`
-          )
-
+      try {
+        if (selectedRoute.value) {
+          console.log('[INFO] 정류장 도착 정보를 새로 불러옵니다...')
+          // filteredStations에 저장된 정류장의 도착 정보를 다시 호출
+          await fetchArrivalInfoForStations()
           lastFetchTime.value = new Date()
+          console.log('[INFO] 도착 정보가 새로 업데이트되었습니다.')
+        } else {
+          console.warn('[WARN] 선택된 노선 정보가 없습니다.')
         }
+      } catch (error) {
+        console.error('[ERROR] 도착 정보 새로고침 중 오류 발생:', error)
       }
     }
 
@@ -995,18 +1118,37 @@ export default {
     })
 
     const isHighProbability = (idx) => {
-      const station = selectedStations.value.find((s) => s.seq === idx)
-      return station ? station.probability > 0.5 : false // 예시 임계값
+      const station = selectedStations.value.find((s) => s.idx === String(idx)) // idx를 문자열로 변환
+      if (!station) return '없음'
+
+      const { probability } = station
+
+      if (probability <= 0.4) {
+        return '낮음'
+      } else if (probability <= 0.7) {
+        return '보통'
+      } else if (probability <= 1.0) {
+        return '높음'
+      }
+
+      return '없음'
     }
 
     const isHighestProbability = (idx) => {
       if (!selectedStations.value || selectedStations.value.length === 0)
         return false
+
       const maxProbability = Math.max(
         ...selectedStations.value.map((s) => s.probability)
       )
-      const station = selectedStations.value.find((s) => s.seq === idx)
-      return station && station.probability === maxProbability
+
+      // maxProbability와 일치하는 정류장 중 첫 번째를 찾음
+      const firstMaxStation = selectedStations.value.find(
+        (s) => s.probability === maxProbability
+      )
+
+      // 현재 idx가 첫 번째로 발견된 정류장의 idx와 같은지 확인
+      return firstMaxStation && firstMaxStation.idx === String(idx)
     }
 
     const selectStation = (station) => {
@@ -1040,12 +1182,37 @@ export default {
 
     onMounted(() => {
       getCurrentPosition()
+
       const timeData = store.getters['time/getTime']
       console.log('[DEBUG] Vuex에서 가져온 시간 데이터:', timeData)
 
       searchTime.value = timeData.minute
       console.log('[DEBUG] Vuex에서 설정한 searchTime:', searchTime.value)
+
+      // searchTransitRoutes 호출
       searchTransitRoutes()
+
+      // filteredStations 변경 감지
+      watch(
+        () => filteredStations.value,
+        (newVal) => {
+          // console.log('[DEBUG] filteredStations 변경됨:', newVal) // filteredStations 변화 확인
+          // console.log(
+          //   '[DEBUG] filteredStations as JSON:',
+          //   JSON.stringify(newVal, null, 2)
+          // ) // JSON 포맷으로 보기
+        },
+        { deep: true }
+      )
+
+      // selectedStations 변경 감지
+      watch(
+        () => selectedStations.value,
+        (newVal) => {
+          console.log('[DEBUG] selectedStations 변경됨:', newVal) // selectedStations 변화 확인
+        },
+        { deep: true }
+      )
     })
 
     return {
@@ -1077,7 +1244,8 @@ export default {
       isRealTimeData,
       refreshBusInfo,
       zoomIn,
-      zoomOut
+      zoomOut,
+      vuextimeInfo
     }
   },
   props: {

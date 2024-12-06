@@ -46,7 +46,7 @@ async function loadPassengerData(filePath) {
 
     const passengerData = {}
     parsedData.forEach((row, index) => {
-      console.log(`[DEBUG] 처리 중인 row(${index}):`, row)
+      // console.log(`[DEBUG] 처리 중인 row(${index}):`, row)
 
       const stationSeq = parseInt(row['정류장순번'], 10)
       if (isNaN(stationSeq)) {
@@ -64,12 +64,12 @@ async function loadPassengerData(filePath) {
       }
 
       passengerData[stationSeq] = row
-      console.log(`[DEBUG] 추가된 정류장 데이터:`, { stationSeq, data: row })
+      //console.log(`[DEBUG] 추가된 정류장 데이터:`, { stationSeq, data: row })
     })
 
-    console.log('[INFO] 최종 로드된 passengerData:', passengerData)
+    //console.log('[INFO] 최종 로드된 passengerData:', passengerData)
 
-    console.log('[DEBUG] 로드된 승객 데이터:', passengerData)
+    //console.log('[DEBUG] 로드된 승객 데이터:', passengerData)
     return passengerData
   } catch (error) {
     console.error('[ERROR] CSV 로드 실패:', error)

@@ -46,7 +46,9 @@
       </div>
       <div class="request-time">
         <span class="time-label">길찾기 요청 시각:</span>
-        <span class="time-value">{{ formattedRequestTime }}</span>
+        <span class="time-value"
+          >{{ timeInfo.hour }}시 {{ timeInfo.minute }}분</span
+        >
       </div>
     </div>
 
@@ -185,7 +187,7 @@ const sortCriteria = ref('totalTime')
 const departureName = ref('현재 출발지')
 const stationName = ref(null)
 const requestTime = ref(null)
-
+const timeInfo = computed(() => store.getters['time/getTime'])
 // Vuex에서 출발지와 도착지 정보를 가져오는 computed 속성
 const departure = computed(() => store.state.departure.departure)
 const destination = computed(() => store.state.destination.destination)
@@ -373,6 +375,9 @@ onMounted(async () => {
   )
 
   await searchTransitRoutes()
+  return {
+    timeInfo // 템플릿에서 사용 가능하도록 반환
+  }
 })
 </script>
 

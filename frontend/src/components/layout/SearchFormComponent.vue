@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import {
@@ -156,32 +156,46 @@ const tempSelectedMinute = ref('')
 const dateOptions = ref([])
 
 const departureName = computed({
-  get: () => store.state.departure.departure?.name || '',
-  set: (value) => store.commit('departure/setDeparture', { name: value })
+  get: () => {
+    const name = store.state.departure.departure?.name || ''
+    logVuexState('출발지 변경')
+    return name
+  },
+  set: (value) => {
+    store.commit('departure/setDeparture', { name: value })
+    logVuexState('출발지 설정')
+  }
 })
+
 const destinationName = computed({
-  get: () => store.state.destination.destination?.name || '',
-  set: (value) => store.commit('destination/setDestination', { name: value })
+  get: () => {
+    const name = store.state.destination.destination?.name || ''
+    logVuexState('도착지 변경')
+    return name
+  },
+  set: (value) => {
+    store.commit('destination/setDestination', { name: value })
+    logVuexState('도착지 설정')
+  }
 })
 
 const clearDeparture = () => {
   store.commit('departure/setDeparture', { name: '', coordinates: {} })
+  logVuexState('출발지 초기화')
 }
 const clearDestination = () => {
   store.commit('destination/setDestination', { name: '', coordinates: {} })
+  logVuexState('도착지 초기화')
 }
 
 const formattedTime = computed(() => {
   const time = store.getters['time/getTime']
-  if (
-    !time ||
-    !time.month ||
-    !time.day ||
-    !time.hour ||
-    time.minute === undefined
-  ) {
+  console.log('[DEBUG] formattedTime 계산 중:', time)
+
+  if (!time) {
     return '출발 시간을 설정하세요'
   }
+
   const dayText =
     time.day === new Date().getDate()
       ? '오늘'
@@ -196,6 +210,14 @@ const formattedTime = computed(() => {
   return `${dayText} ${meridiemText} ${formattedHour}:${formattedMinute} 출발`
 })
 
+watch(
+  () => store.getters['time/getTime'],
+  (newTime) => {
+    console.log('[DEBUG] Vuex 시간 상태 변경 감지:', newTime)
+  },
+  { immediate: true } // 초기 값도 감지
+)
+
 const setCurrentTime = () => {
   const now = new Date()
   const month = now.getMonth() + 1
@@ -203,8 +225,14 @@ const setCurrentTime = () => {
   const hour = now.getHours()
   const minute = now.getMinutes()
 
+  // Vuex 상태 업데이트
   store.commit('time/setTime', { month, day, hour, minute })
-  console.log('[DEBUG] Vuex 저장된 시간 데이터:', store.getters['time/getTime']) // 로그 추가
+
+  // 상태 업데이트 확인 로그
+  console.log(
+    '[DEBUG] setCurrentTime 호출 완료:',
+    store.getters['time/getTime']
+  )
 }
 
 const openTimeModal = () => {
@@ -212,10 +240,7 @@ const openTimeModal = () => {
   tempSelectedMeridiem.value = selectedMeridiem.value
   tempSelectedHour.value = selectedHour.value
   tempSelectedMinute.value = selectedMinute.value
-  console.log(
-    '[DEBUG] Vuex에 저장된 시간 데이터:',
-    store.getters['time/getTime']
-  )
+  logVuexState('시간 설정 모달 열기')
 
   showTimeModal.value = true
 }
@@ -232,6 +257,7 @@ const switchLocations = () => {
 
   store.commit('departure/setDeparture', tempDestination)
   store.commit('destination/setDestination', tempDeparture)
+  logVuexState('출발지와 도착지 교환')
 }
 
 const confirmTime = () => {
@@ -254,11 +280,12 @@ const confirmTime = () => {
   const minute = parseInt(selectedMinute.value)
 
   store.commit('time/setTime', { month, day, hour, minute })
-  console.log('[DEBUG] Vuex 저장된 시간 데이터:', store.getters['time/getTime']) // 로그 추가
+  logVuexState('시간 설정 완료')
   showTimeModal.value = false
 }
 
 const closeTimeModal = () => {
+  logVuexState('시간 설정 모달 닫기')
   showTimeModal.value = false
 }
 
@@ -284,6 +311,9 @@ const generateDateOptions = () => {
 }
 
 onMounted(() => {
+  // Vuex 초기화 액션 호출
+  store.dispatch('time/initialize')
+  console.log('[DEBUG] 초기화 완료:', store.getters['time/getTime'])
   setCurrentTime()
   generateDateOptions()
 })
@@ -301,6 +331,32 @@ const isCurrentTime = computed(() => {
     time.minute === now.getMinutes()
   )
 })
+
+const logVuexState = (action) => {
+  console.log(`[DEBUG - ${action}]`)
+  console.log('출발지:', store.state.departure.departure)
+  console.log('도착지:', store.state.destination.destination)
+  console.log('시간:', store.getters['time/getTime'])
+}
+
+// Vuex 상태 변화를 감지하여 로그 출력
+watch(
+  () => store.state.departure.departure,
+  () => logVuexState('출발지 변경 감지'),
+  { deep: true }
+)
+
+watch(
+  () => store.state.destination.destination,
+  () => logVuexState('도착지 변경 감지'),
+  { deep: true }
+)
+
+watch(
+  () => store.getters['time/getTime'],
+  () => logVuexState('시간 변경 감지'),
+  { deep: true }
+)
 </script>
 
 <style scoped>

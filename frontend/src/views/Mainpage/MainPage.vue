@@ -80,14 +80,49 @@ export default {
       minute: (state) => state.minute
     }),
     canSearch() {
-      return (
-        this.departureName !== '출발지를 입력하세요' &&
-        this.destinationName !== '도착지를 입력하세요' &&
-        this.month &&
-        this.day &&
-        this.hour &&
-        this.minute
-      )
+      const validDeparture =
+        this.departureName && this.departureName !== '출발지를 입력하세요'
+      const validDestination =
+        this.destinationName && this.destinationName !== '도착지를 입력하세요'
+
+      // 시간 정보가 0일 경우도 true로 처리
+      const validTime =
+        this.month !== null &&
+        this.day !== null &&
+        this.hour !== null &&
+        this.minute !== null
+
+      console.log('[DEBUG] 출발지 설정 여부:', validDeparture)
+      console.log('[DEBUG] 도착지 설정 여부:', validDestination)
+      console.log('[DEBUG] 시간 설정 여부:', validTime)
+
+      return validDeparture && validDestination && validTime
+    }
+  }, // Vuex 상태 변경 감지 watch
+  watch: {
+    '$store.state.departure.departure': {
+      handler(newVal, oldVal) {
+        console.log('[DEBUG] 출발지 변경 감지:')
+        console.log('새 값:', newVal, '이전 값:', oldVal)
+        console.log('canSearch 평가 결과:', this.canSearch)
+      },
+      deep: true
+    },
+    '$store.state.destination.destination': {
+      handler(newVal, oldVal) {
+        console.log('[DEBUG] 도착지 변경 감지:')
+        console.log('새 값:', newVal, '이전 값:', oldVal)
+        console.log('canSearch 평가 결과:', this.canSearch)
+      },
+      deep: true
+    },
+    '$store.state.time': {
+      handler(newVal, oldVal) {
+        console.log('[DEBUG] 시간 변경 감지:')
+        console.log('새 값:', newVal, '이전 값:', oldVal)
+        console.log('canSearch 평가 결과:', this.canSearch)
+      },
+      deep: true
     }
   },
   methods: {

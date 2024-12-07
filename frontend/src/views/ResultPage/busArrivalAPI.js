@@ -120,7 +120,7 @@ export async function fetchBusArrivalInfo(
     console.log('[INFO] 실시간 도착 정보 API 호출 중...')
     console.log('[DEBUG] 호출 파라미터:', {
       serviceKey,
-      stationId: stationName,
+      stationId: localStationId,
       routeId
     })
     const response = await axios.get(

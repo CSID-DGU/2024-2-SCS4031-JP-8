@@ -623,3 +623,93 @@
 .zoom-button:hover {
   background: #f1f5f9;
 }
+
+.destination-route {
+  background-color: #f0f9ff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.destination-route-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 12px;
+}
+
+.destination-route-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+}
+
+.recommendation-section {
+  margin-top: 32px;
+}
+
+.recommendation-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 16px;
+}
+
+.final-station {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.final-station-icon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+.final-station-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.9375rem;
+  color: #4b5563;
+}
+
+.time-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+}
+
+@media (max-width: 390px) {
+  .destination-route-title,
+  .recommendation-title {
+    font-size: 1.125rem;
+  }
+
+  .final-station-label,
+  .time-info {
+    font-size: 0.875rem;
+  }
+}

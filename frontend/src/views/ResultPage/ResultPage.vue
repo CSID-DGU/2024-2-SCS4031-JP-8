@@ -687,7 +687,35 @@ export default {
 
         console.log('[INFO] 필터링된 정류장 데이터:', stations)
 
-        filteredStations.value = stations.slice(0, 5)
+        // 수정된 부분: 선택한 정류장과 앞의 4개 정류장을 포함하여 저장
+        filteredStations.value = (() => {
+          const targetStationIndex = stations.findIndex(
+            (station) =>
+              station.stationName === route.stationName &&
+              station.stationID === route.stationID &&
+              station.stationDirection === directionCode
+          )
+
+          if (targetStationIndex === -1) {
+            console.error(
+              `[ERROR] 선택한 정류장(${route.stationName})을 찾을 수 없습니다.`
+            )
+            return []
+          }
+
+          const startIndex = Math.max(0, targetStationIndex - 4)
+          const slicedStations = stations.slice(
+            startIndex,
+            targetStationIndex + 1
+          )
+
+          console.log(
+            '[INFO] 선택한 정류장과 앞의 4개 정류장:',
+            slicedStations.map((station) => station.stationName)
+          )
+
+          return slicedStations
+        })()
 
         console.log('[INFO] fetchRouteInfoForStations 호출 시작')
         await fetchRouteInfoForStations() // 선택된 노선에 대한 경로 정보 다시 가져오기

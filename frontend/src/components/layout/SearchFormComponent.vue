@@ -32,7 +32,14 @@
     <div class="input-group">
       <ClockIcon class="input-icon" />
       <input :value="formattedTime" @click="openTimeModal" readonly />
-      <button @click="setCurrentTime" class="realtime-button">
+      <button
+        @click="setCurrentTime"
+        class="realtime-button"
+        :class="{
+          'current-time': isCurrentTime,
+          'not-current-time': !isCurrentTime
+        }"
+      >
         <ZapIcon class="realtime-icon" />
         실시간
       </button>
@@ -283,6 +290,17 @@ onMounted(() => {
 
 const goToSearchDeparture = () => router.push({ path: '/search-departure' })
 const goToSearchDestination = () => router.push({ path: '/search-destination' })
+
+const isCurrentTime = computed(() => {
+  const now = new Date()
+  const time = store.getters['time/getTime']
+  return (
+    time.month === now.getMonth() + 1 &&
+    time.day === now.getDate() &&
+    time.hour === now.getHours() &&
+    time.minute === now.getMinutes()
+  )
+})
 </script>
 
 <style scoped>
@@ -630,5 +648,15 @@ const goToSearchDestination = () => router.push({ path: '/search-destination' })
   background-color: #e2e8f0;
   border-radius: 2px;
   margin: 0 auto 16px;
+}
+
+.realtime-button.current-time {
+  background: #3b82f6;
+  color: white;
+}
+
+.realtime-button.not-current-time {
+  background: #e2e8f0;
+  color: #64748b;
 }
 </style>

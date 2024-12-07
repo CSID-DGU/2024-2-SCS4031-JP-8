@@ -111,6 +111,26 @@
             거리순
           </button>
         </div>
+        <div
+          v-if="
+            filteredStations.length > 0 &&
+            filteredStations[0].routeToDestination
+          "
+          class="destination-route"
+        >
+          <h3>도착지까지의 최단 경로</h3>
+          <p>
+            총 소요 시간:
+            {{ filteredStations[0].routeToDestination.totalTime }}분
+          </p>
+          <p>
+            환승 횟수: {{ filteredStations[0].routeToDestination.transitCount }}
+          </p>
+          <p>
+            도보 시간: {{ filteredStations[0].routeToDestination.walkTime }}m
+          </p>
+        </div>
+
         <div class="recommendation-title">
           {{
             isRealTimeData
@@ -202,7 +222,12 @@
                   station.stationDirection === 2 ? '상행' : '하행'
                 }})
               </p>
-
+              <!-- 추가된 경로 정보 표시! -->
+              <div class="route-info" v-if="station.routeInfo">
+                <p>소요 시간: {{ station.routeInfo.totalTime }}분</p>
+                <p>환승 횟수: {{ station.routeInfo.transitCount }}</p>
+                <p>도보 시간: {{ station.routeInfo.walkTime }}m</p>
+              </div>
               <p
                 v-if="index === sortedStations.length - 1"
                 class="final-station-label"
@@ -372,6 +397,8 @@ export default {
 
     const router = useRouter()
     const vuextimeInfo = computed(() => store.getters['time/getTime'])
+    const fromLocationx = computed(() => store.state.departure.depature.x)
+    const fromLocationy = computed(() => store.state.departure.depature.y)
 
     const fromLocation = computed(() => store.state.departure.departure.name)
     const toLocation = computed(() => store.state.destination.destination.name)
@@ -662,6 +689,10 @@ export default {
 
         filteredStations.value = stations.slice(0, 5)
 
+        console.log('[INFO] fetchRouteInfoForStations 호출 시작')
+        await fetchRouteInfoForStations() // 선택된 노선에 대한 경로 정보 다시 가져오기
+        console.log('[INFO] fetchRouteInfoForStations 호출 완료')
+
         const firstStation = filteredStations.value[0]
         if (firstStation) {
           console.log('[INFO] 첫 정류장:', firstStation)
@@ -744,6 +775,7 @@ export default {
           await nextTick()
           initializeMap()
           await fetchArrivalInfoForStations()
+          await fetchShortestRouteToDestination()
         }
       } catch (error) {
         console.error('노선 선택 오류:', error)
@@ -1180,7 +1212,167 @@ export default {
       }
     }
 
-    onMounted(() => {
+    const fetchRouteInfoForStations = async () => {
+      // Vuex에서 departure 데이터를 가져오기
+      const departure = store.getters['departure/getDeparture'] // 'departure'는 모듈 이름
+      if (!departure) {
+        console.error(
+          '[ERROR] Vuex에서 departure 데이터를 가져오지 못했습니다.'
+        )
+        return
+      }
+
+      const { coordinates } = departure
+
+      if (!coordinates || !coordinates.x || !coordinates.y) {
+        console.error(
+          '[ERROR] departure 데이터에 좌표가 없습니다. coordinates:',
+          coordinates
+        )
+        return
+      }
+
+      console.log('[DEBUG] Vuex - departure:', departure)
+
+      const fromX = coordinates.x // 출발지 X 좌표
+      const fromY = coordinates.y // 출발지 Y 좌표
+
+      console.log('[DEBUG] fromX:', fromX)
+      console.log('[DEBUG] fromY:', fromY)
+
+      // 정류장 데이터가 있는지 확인
+      if (!filteredStations.value || filteredStations.value.length === 0) {
+        console.warn('[WARN] filteredStations에 데이터가 없습니다.')
+        return
+      }
+
+      console.log('[DEBUG] sortedStations:', sortedStations.value)
+
+      const promises = sortedStations.value.map(async (station) => {
+        try {
+          const response = await axios.get(
+            'https://api.odsay.com/v1/api/searchPubTransPathT',
+            {
+              params: {
+                apiKey: process.env.VUE_APP_ODSAY_API_KEY,
+                SX: fromX,
+                SY: fromY,
+                EX: station.x,
+                EY: station.y,
+                OPT: 0 // 추천 경로 기준
+              }
+            }
+          )
+
+          console.log('[INFO] API 호출 응답:', response.data)
+          const paths = response.data.result?.path || []
+          const shortestPath = paths.sort(
+            (a, b) => a.info.totalTime - b.info.totalTime
+          )[0]
+
+          if (shortestPath) {
+            station.routeInfo = {
+              totalTime: shortestPath.info.totalTime,
+              transitCount:
+                shortestPath.info.busTransitCount +
+                shortestPath.info.subwayTransitCount,
+              walkTime: shortestPath.info.totalWalk
+            }
+          } else {
+            station.routeInfo = null
+          }
+        } catch (error) {
+          console.error(
+            `[ERROR] 정류장 ${station.stationName} 경로 정보 호출 실패:`,
+            error
+          )
+          station.routeInfo = null
+        }
+      })
+
+      await Promise.all(promises)
+    }
+    const fetchShortestRouteToDestination = async () => {
+      try {
+        // 도착지 좌표 가져오기
+        const destination = store.getters['destination/getDestination']
+        if (
+          !destination ||
+          !destination.coordinates ||
+          !destination.coordinates.x ||
+          !destination.coordinates.y
+        ) {
+          console.error('[ERROR] 도착지 좌표가 없습니다.')
+          return
+        }
+        const destinationX = destination.coordinates.x
+        const destinationY = destination.coordinates.y
+
+        // filteredStations의 첫 번째 정류장 좌표 가져오기
+        const firstStation = filteredStations.value[0]
+        if (!firstStation || !firstStation.x || !firstStation.y) {
+          console.error('[ERROR] filteredStations에 첫 번째 정류장이 없습니다.')
+          return
+        }
+        const firstStationX = firstStation.x
+        const firstStationY = firstStation.y
+
+        console.log('[INFO] 길찾기 API 호출 시작', {
+          fromX: firstStationX,
+          fromY: firstStationY,
+          toX: destinationX,
+          toY: destinationY
+        })
+
+        // ODsay API 호출
+        const response = await axios.get(
+          'https://api.odsay.com/v1/api/searchPubTransPathT',
+          {
+            params: {
+              SX: firstStationX,
+              SY: firstStationY,
+              EX: destinationX,
+              EY: destinationY,
+              OPT: 0, // 추천 경로 기준
+              apiKey: apiConfig.odsayApiKey
+            }
+          }
+        )
+
+        // API 응답 처리
+        const paths = response.data.result?.path || []
+        if (paths.length === 0) {
+          console.warn('[WARN] 길찾기 결과가 없습니다.')
+          return
+        }
+
+        // 최단 시간순으로 정렬
+        const shortestPath = paths.sort(
+          (a, b) => a.info.totalTime - b.info.totalTime
+        )[0]
+
+        if (shortestPath) {
+          console.log('[INFO] 최단 경로:', shortestPath)
+
+          // 결과 표시
+          firstStation.routeToDestination = {
+            totalTime: shortestPath.info.totalTime,
+            transitCount:
+              shortestPath.info.busTransitCount +
+              shortestPath.info.subwayTransitCount,
+            walkTime: shortestPath.info.totalWalk
+          }
+
+          console.log('[INFO] 경로 정보:', firstStation.routeToDestination)
+        } else {
+          console.warn('[WARN] 최단 경로를 찾을 수 없습니다.')
+        }
+      } catch (error) {
+        console.error('[ERROR] 길찾기 API 호출 중 오류:', error)
+      }
+    }
+
+    onMounted(async () => {
       getCurrentPosition()
 
       const timeData = store.getters['time/getTime']
@@ -1188,9 +1380,6 @@ export default {
 
       searchTime.value = timeData.minute
       console.log('[DEBUG] Vuex에서 설정한 searchTime:', searchTime.value)
-
-      // searchTransitRoutes 호출
-      searchTransitRoutes()
 
       // filteredStations 변경 감지
       watch(
@@ -1213,11 +1402,20 @@ export default {
         },
         { deep: true }
       )
+
+      await searchTransitRoutes()
+
+      console.log('[INFO] fetchRouteInfoForStations 호출 시작')
+      await fetchRouteInfoForStations() // 경로 정보를 가져오는 함수 호출
+      console.log('[INFO] fetchRouteInfoForStations 호출 완료')
+      console.log('[INFO] 도착지 경로 검색 시작')
+      await fetchShortestRouteToDestination()
     })
 
     return {
       searchTime, // 템플릿에서 필요하면 반환
-
+      fromLocationx,
+      fromLocationy,
       fromLocation,
       toLocation,
       loading,
@@ -1245,7 +1443,8 @@ export default {
       refreshBusInfo,
       zoomIn,
       zoomOut,
-      vuextimeInfo
+      vuextimeInfo,
+      fetchShortestRouteToDestination
     }
   },
   props: {

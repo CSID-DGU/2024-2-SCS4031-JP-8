@@ -202,7 +202,7 @@
                   station.stationDirection === 2 ? '상행' : '하행'
                 }})
               </p>
-              <!-- 추가된 경로 정보 표시 -->
+              <!-- 추가된 경로 정보 표시! -->
               <div class="route-info" v-if="station.routeInfo">
                 <p>소요 시간: {{ station.routeInfo.totalTime }}분</p>
                 <p>환승 횟수: {{ station.routeInfo.transitCount }}</p>

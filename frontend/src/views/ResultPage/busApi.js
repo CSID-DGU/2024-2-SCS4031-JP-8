@@ -5,7 +5,8 @@ const busRouteData = {
   '5000A': { busID: 11151 },
   '5000B': { busID: 11011 },
   1112: { busID: 10052 },
-  6001: { busID: 16017 }
+  6001: { busID: 16017 },
+  M7731: { busID: 5541 }
 }
 
 // 오디세이 API 키

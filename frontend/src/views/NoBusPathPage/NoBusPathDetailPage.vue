@@ -510,7 +510,7 @@ const getSegmentIcon = (segment) => {
     case 2:
       return BusIcon
     case 3:
-      return WalkIcon
+      return Footprints
     default:
       return MapPinIcon
   }

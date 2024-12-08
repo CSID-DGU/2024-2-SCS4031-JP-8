@@ -111,145 +111,6 @@
             거리순
           </button>
         </div>
-        <div
-          v-if="
-            filteredStations.length > 0 &&
-            filteredStations[0].routeToDestination
-          "
-          class="destination-route"
-        >
-          <div>
-            <!-- <h3>도착지까지의 최단 경로</h3>
-            <p>
-              총 소요 시간:
-              {{ filteredStations[0].routeToDestination.totalTime }}분
-            </p>
-            <p>
-              환승 횟수:
-              {{ filteredStations[0].routeToDestination.transitCount }}
-            </p>
-            <p>
-              도보 거리: {{ filteredStations[0].routeToDestination.totalWalk }}m
-            </p>
-            <p>
-              예상 요금: {{ filteredStations[0].routeToDestination.payment }}원
-            </p>
-
-            <div v-if="filteredStations[0].routeToDestination.subPath">
-              <h4>경로 세부 정보</h4>
-              <ul>
-                <li
-                  v-for="(subPath, index) in filteredStations[0]
-                    .routeToDestination.subPath"
-                  :key="index"
-                >
-                  <p>
-                    <strong>단계 {{ index + 1 }}:</strong>
-                    {{
-                      subPath.trafficType === 1
-                        ? '지하철'
-                        : subPath.trafficType === 2
-                        ? '버스'
-                        : '도보'
-                    }}
-                  </p>
-
-                  <!-- 도보 -->
-            <!-- <div v-if="subPath.trafficType === 3">
-                    <p>도보 거리: {{ subPath.distance }}m</p>
-                    <p>도보 예상 시간: {{ subPath.sectionTime }}분</p>
-                  </div> -->
-
-            <!-- 지하철 -->
-            <!-- <div v-if="subPath.trafficType === 1">
-                    <p>노선: {{ subPath.lane[0]?.name }}</p>
-                    <p>승차역: {{ subPath.startName }}</p>
-                    <p>하차역: {{ subPath.endName }}</p>
-                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
-                    <p>정류장 수: {{ subPath.stationCount }}</p>
-                    <p>방면: {{ subPath.way }}</p>
-                    <ul v-if="subPath.passStopList?.stations">
-                      <h5>경유역</h5>
-                      <li
-                        v-for="station in subPath.passStopList.stations"
-                        :key="station.index"
-                      >
-                        {{ station.stationName }} (ID: {{ station.stationID }})
-                      </li>
-                    </ul>
-                  </div> -->
-
-            <!-- 버스 -->
-            <!-- <div v-if="subPath.trafficType === 2">
-                    <p>버스 번호: {{ subPath.lane[0]?.busNo }}</p>
-                    <p>승차 정류장: {{ subPath.startName }}</p>
-                    <p>하차 정류장: {{ subPath.endName }}</p>
-                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
-                    <p>정류장 수: {{ subPath.stationCount }}</p>
-                    <ul v-if="subPath.passStopList?.stations">
-                      <h5>경유 정류장</h5>
-                      <li
-                        v-for="station in subPath.passStopList.stations"
-                        :key="station.index"
-                      >
-                        {{ station.stationName }} (ID: {{ station.stationID }})
-                      </li>
-                    </ul>
-                  </div>
-                </li>
-              </ul>
-            </div> -->
-
-            <div v-if="filteredStations[0].routeToDestination.subPath">
-              <h4>경로 세부 정보</h4>
-              <ul>
-                <li
-                  v-for="(subPath, index) in filteredStations[0]
-                    .routeToDestination.subPath"
-                  :key="index"
-                >
-                  <p>
-                    <strong>단계 {{ index + 1 }}:</strong>
-                    {{
-                      subPath.trafficType === 1
-                        ? '지하철'
-                        : subPath.trafficType === 2
-                        ? '버스'
-                        : '도보'
-                    }}
-                  </p>
-                  <p v-if="subPath.trafficType !== 3">
-                    {{ subPath.lane[0]?.name || subPath.lane[0]?.busNo }}:
-                    {{ subPath.startName }} → {{ subPath.endName }}
-                  </p>
-                  <p>거리: {{ subPath.distance }}m</p>
-                  <p>예상 시간: {{ subPath.sectionTime }}분</p>
-                  <p
-                    v-if="
-                      subPath.trafficType === 1 || subPath.trafficType === 2
-                    "
-                  >
-                    정류장 수: {{ subPath.stationCount || '정보 없음' }}
-                  </p>
-                  <ul
-                    v-if="
-                      subPath.passStopList?.stations &&
-                      subPath.trafficType === 2
-                    "
-                  >
-                    <h5>경유 정류장</h5>
-                    <li
-                      v-for="station in subPath.passStopList.stations"
-                      :key="station.index"
-                    >
-                      {{ station.stationName }} (ID: {{ station.stationID }})
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
 
         <div class="recommendation-title">
           <span
@@ -262,7 +123,9 @@
         </div>
         <div class="stations-list">
           <div
-            v-for="(station, index) in sortedStations"
+            v-for="(station, index) in sortedStations.filter((station) =>
+              ['보통', '높음'].includes(isHighProbability(station.idx))
+            )"
             :key="station.stationID"
             class="station-timeline-item"
             :class="{

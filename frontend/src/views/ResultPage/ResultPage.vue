@@ -1337,17 +1337,18 @@ export default {
       if (!selectedStations.value || selectedStations.value.length === 0)
         return false
 
+      // 최대 확률 계산
       const maxProbability = Math.max(
         ...selectedStations.value.map((s) => s.probability)
       )
 
-      // maxProbability와 일치하는 정류장 중 첫 번째를 찾음
-      const firstMaxStation = selectedStations.value.find(
-        (s) => s.probability === maxProbability
-      )
+      // maxProbability와 일치하는 정류장 중 가장 뒤에 있는 정류장을 찾음
+      const lastMaxStation = [...selectedStations.value]
+        .reverse()
+        .find((s) => s.probability === maxProbability)
 
-      // 현재 idx가 첫 번째로 발견된 정류장의 idx와 같은지 확인
-      return firstMaxStation && firstMaxStation.idx === String(idx)
+      // 현재 idx가 가장 뒤에 발견된 정류장의 idx와 같은지 확인
+      return lastMaxStation && lastMaxStation.idx === String(idx)
     }
 
     const selectStation = (station) => {

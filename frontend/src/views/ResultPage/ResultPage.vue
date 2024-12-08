@@ -607,6 +607,7 @@ export default {
       // }
       return false
     }
+
     const searchTransitRoutes = async () => {
       loading.value = true
       try {
@@ -635,16 +636,27 @@ export default {
         )
 
         const paths = response.data.result.path || []
-        const routeOptions = ['5000', '5000A', '5000B', '1112', '6001']
+        const routeOptions = ['5000', '5000A', '5000B', '1112', '6001', 'M7731']
         const allRoutes = []
 
         for (const route of paths) {
           for (const segment of route.subPath) {
             if (segment.trafficType === 2) {
+              // 버스 구간만 처리
               for (const lane of segment.lane) {
                 const busNo = lane.busNo
                 if (routeOptions.includes(busNo) && checkTimeRange(busNo)) {
                   console.log(`조건에 맞는 버스 번호 - ${busNo}`)
+
+                  // 해당 경로의 첫 번째 정류장을 segment.startID에 저장
+                  const firstStation = segment.passStopList?.stations?.[0]
+                  if (firstStation) {
+                    console.log(
+                      `버스 ${busNo}의 첫 번째 정류장 - ${firstStation.stationName}`
+                    )
+                    segment.startID = firstStation.stationID // 첫 번째 정류장의 stationID 저장
+                  }
+
                   try {
                     const stationDetailResponse = await axios.get(
                       'https://api.odsay.com/v1/api/busLaneDetail',
@@ -689,13 +701,13 @@ export default {
                     allRoutes.push({
                       busNo: busNo,
                       directionText: directionText(direction),
-                      stationID: segment.startID,
+                      stationID: segment.startID, // 수정된 부분: 첫 번째 정류장 ID가 저장됨
                       stationName: segment.startName,
-                      localStationID: targetStation?.localStationID, // localStationID 추가
+                      localStationID: targetStation?.localStationID,
                       firstStation: {
                         name: enrichedStations[0]?.stationName,
                         id: enrichedStations[0]?.stationID,
-                        localStationID: enrichedStations[0]?.localStationID, // 첫 정류장의 localStationID
+                        localStationID: enrichedStations[0]?.localStationID,
                         direction: directionText(
                           enrichedStations[0]?.stationDirection === 2
                             ? 'up'
@@ -729,19 +741,15 @@ export default {
           '조건에 맞는 모든 노선 (중복 제거 후):',
           filteredRoutes.value
         )
-        // 여기에 새로운 조건 추가
         if (filteredRoutes.value.length === 0) {
-          // 제공하는 버스 노선이 없으면 '/nobusroute'로 라우팅
           router.push('/nobusroute')
           return
         }
-        // 첫 번째 버스 노선 자동 선택
         if (filteredRoutes.value.length > 0) {
           await selectBusRoute(filteredRoutes.value[0])
         }
       } catch (error) {
         console.error('API 호출 중 오류 발생:', error)
-        // 에러 발생 시에도 '/nobusroute'로 라우팅
         router.push('/nobusroute')
       } finally {
         loading.value = false

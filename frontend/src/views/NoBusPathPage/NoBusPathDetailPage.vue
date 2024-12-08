@@ -223,10 +223,34 @@ const loadLane = (map, mapObj, sx, sy, ex, ey) => {
     })
     .then((data) => {
       console.log('[DEBUG] loadLane 응답 데이터:', data)
+
       if (data.result?.lane) {
         console.log('[DEBUG] lane 데이터 추출 성공:', data.result.lane)
-        drawMarkers(map, sx, sy, ex, ey)
+
+        // Polyline 추가
         drawPolyLines(map, data)
+
+        // Polyline 끝 지점 계산 (여기에서 함수 호출)
+        const polylineEndCoord = calculatePolylineEndCoord(data)
+
+        if (polylineEndCoord) {
+          console.log(
+            '[DEBUG] calculatePolylineEndCoord 결과:',
+            polylineEndCoord
+          )
+
+          // Polyline 끝 좌표를 drawMarkers로 전달
+          drawMarkers(
+            map,
+            sx,
+            sy,
+            polylineEndCoord.lng(),
+            polylineEndCoord.lat()
+          )
+        } else {
+          console.warn('[WARN] Polyline 끝 좌표가 없습니다. 기본 좌표 사용.')
+          drawMarkers(map, sx, sy, ex, ey) // 기본 도착지 좌표로 처리
+        }
       } else {
         console.error('[ERROR] lane 데이터를 찾을 수 없습니다:', data)
       }
@@ -234,6 +258,42 @@ const loadLane = (map, mapObj, sx, sy, ex, ey) => {
     .catch((error) => {
       console.error('[ERROR] loadLane 호출 중 오류:', error)
     })
+}
+
+const calculatePolylineEndCoord = (data) => {
+  console.log('[DEBUG] calculatePolylineEndCoord 호출')
+
+  if (!data.result?.lane) {
+    console.error('[ERROR] lane 데이터가 없습니다.')
+    return null
+  }
+
+  let lastCoord = null
+
+  data.result.lane.forEach((lane, laneIndex) => {
+    console.log(`[DEBUG] lane ${laneIndex} 처리 중:`, lane)
+
+    if (lane.section?.coords) {
+      const coordsArray = lane.section.coords.split('|').map((coord, index) => {
+        const [x, y] = coord.split(',')
+        const latLng = new naver.maps.LatLng(parseFloat(y), parseFloat(x))
+
+        console.log(`[DEBUG] lane ${laneIndex}, coord ${index}:`, latLng)
+
+        return latLng
+      })
+
+      if (coordsArray.length > 0) {
+        lastCoord = coordsArray[coordsArray.length - 1]
+        console.log(`[DEBUG] lane ${laneIndex}의 마지막 좌표:`, lastCoord)
+      }
+    } else {
+      console.warn(`[WARN] lane ${laneIndex}에 coords 데이터가 없습니다.`)
+    }
+  })
+
+  console.log('[DEBUG] 최종 Polyline 끝 좌표:', lastCoord)
+  return lastCoord
 }
 
 // 지도에 마커 추가 (커스텀 마커로 변경)
@@ -246,51 +306,52 @@ const drawMarkers = (map, sx, sy, ex, ey) => {
     map: map,
     icon: {
       content: `
-            <div style="
-              width: 40px;
-              height: 40px;
-              background-color: #4CAF50;
-              border: 3px solid #FFFFFF;
-              border-radius: 50%;
-              box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              color: #FFFFFF;
-              font-weight: bold;
-              font-size: 14px;
-            ">
-              출발
-            </div>
-          `,
+        <div style="
+          width: 40px;
+          height: 40px;
+          background-color: #4CAF50;
+          border: 3px solid #FFFFFF;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #FFFFFF;
+          font-weight: bold;
+          font-size: 14px;
+        ">
+          출발
+        </div>
+      `,
       size: new naver.maps.Size(40, 40),
       anchor: new naver.maps.Point(20, 20)
     }
   })
 
   // 도착지 마커
+  console.log('[DEBUG] 도착 마커 좌표:', { ex, ey })
   new naver.maps.Marker({
     position: new naver.maps.LatLng(ey, ex),
     map: map,
     icon: {
       content: `
-            <div style="
-              width: 40px;
-              height: 40px;
-              background-color: #F44336;
-              border: 3px solid #FFFFFF;
-              border-radius: 50%;
-              box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              color: #FFFFFF;
-              font-weight: bold;
-              font-size: 14px;
-            ">
-              도착
-            </div>
-          `,
+        <div style="
+          width: 40px;
+          height: 40px;
+          background-color: #F44336;
+          border: 3px solid #FFFFFF;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #FFFFFF;
+          font-weight: bold;
+          font-size: 14px;
+        ">
+          도착
+        </div>
+      `,
       size: new naver.maps.Size(40, 40),
       anchor: new naver.maps.Point(20, 20)
     }

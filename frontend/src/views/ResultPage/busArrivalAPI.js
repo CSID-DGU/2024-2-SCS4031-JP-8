@@ -219,12 +219,26 @@ export async function fetchBusArrivalInfo(
     idx
   )
 
-  const dispatchCount = busRouteData[busNo]?.dispatchCount || 6
-  arrivalInfo.firstBus.remainSeats = Math.max(0, 45 - avgReboarding)
+  // 버스 노선 번호에 따라 기준 좌석 수 설정
+  let baseSeats = 45 // 기본 좌석 수
+  if (busNo === '5000B') {
+    baseSeats = 70 // 5000B의 경우 기준 좌석 수를 70으로 설정
+  }
 
+  // 기준 좌석 수와 평균 재차 인원 확인 로그
+  console.log(`[DEBUG] 기준 좌석 수 (baseSeats): ${baseSeats}`)
+  console.log(`[DEBUG] 평균 재차 인원 (avgReboarding): ${avgReboarding}`)
+
+  // 잔여 좌석 계산
+  arrivalInfo.firstBus.remainSeats = Math.max(0, baseSeats - avgReboarding)
+
+  // 최종 잔여 좌석 값 확인 로그
   console.log(
     '[INFO] Poisson 계산으로 전달할 여석 값 (대체):',
     arrivalInfo.firstBus.remainSeats
   )
-  return arrivalInfo // 대체 데이터를 포함한 전체 정보 반환
+
+  return arrivalInfo
 }
+
+//const dispatchCount = busRouteData[busNo]?.dispatchCount || 6

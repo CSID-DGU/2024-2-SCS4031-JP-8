@@ -1322,7 +1322,7 @@ export default {
 
       const { probability } = station
 
-      if (probability <= 0.4) {
+      if (probability <= 0.6) {
         return '낮음'
       } else if (probability <= 0.7) {
         return '보통'

@@ -118,25 +118,147 @@
           "
           class="destination-route"
         >
-          <h3>도착지까지의 최단 경로</h3>
-          <p>
-            총 소요 시간:
-            {{ filteredStations[0].routeToDestination.totalTime }}분
-          </p>
-          <p>
-            환승 횟수: {{ filteredStations[0].routeToDestination.transitCount }}
-          </p>
-          <p>
-            도보 시간: {{ filteredStations[0].routeToDestination.walkTime }}m
-          </p>
+          <div>
+            <!-- <h3>도착지까지의 최단 경로</h3>
+            <p>
+              총 소요 시간:
+              {{ filteredStations[0].routeToDestination.totalTime }}분
+            </p>
+            <p>
+              환승 횟수:
+              {{ filteredStations[0].routeToDestination.transitCount }}
+            </p>
+            <p>
+              도보 거리: {{ filteredStations[0].routeToDestination.totalWalk }}m
+            </p>
+            <p>
+              예상 요금: {{ filteredStations[0].routeToDestination.payment }}원
+            </p>
+
+            <div v-if="filteredStations[0].routeToDestination.subPath">
+              <h4>경로 세부 정보</h4>
+              <ul>
+                <li
+                  v-for="(subPath, index) in filteredStations[0]
+                    .routeToDestination.subPath"
+                  :key="index"
+                >
+                  <p>
+                    <strong>단계 {{ index + 1 }}:</strong>
+                    {{
+                      subPath.trafficType === 1
+                        ? '지하철'
+                        : subPath.trafficType === 2
+                        ? '버스'
+                        : '도보'
+                    }}
+                  </p>
+
+                  <!-- 도보 -->
+            <!-- <div v-if="subPath.trafficType === 3">
+                    <p>도보 거리: {{ subPath.distance }}m</p>
+                    <p>도보 예상 시간: {{ subPath.sectionTime }}분</p>
+                  </div> -->
+
+            <!-- 지하철 -->
+            <!-- <div v-if="subPath.trafficType === 1">
+                    <p>노선: {{ subPath.lane[0]?.name }}</p>
+                    <p>승차역: {{ subPath.startName }}</p>
+                    <p>하차역: {{ subPath.endName }}</p>
+                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
+                    <p>정류장 수: {{ subPath.stationCount }}</p>
+                    <p>방면: {{ subPath.way }}</p>
+                    <ul v-if="subPath.passStopList?.stations">
+                      <h5>경유역</h5>
+                      <li
+                        v-for="station in subPath.passStopList.stations"
+                        :key="station.index"
+                      >
+                        {{ station.stationName }} (ID: {{ station.stationID }})
+                      </li>
+                    </ul>
+                  </div> -->
+
+            <!-- 버스 -->
+            <!-- <div v-if="subPath.trafficType === 2">
+                    <p>버스 번호: {{ subPath.lane[0]?.busNo }}</p>
+                    <p>승차 정류장: {{ subPath.startName }}</p>
+                    <p>하차 정류장: {{ subPath.endName }}</p>
+                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
+                    <p>정류장 수: {{ subPath.stationCount }}</p>
+                    <ul v-if="subPath.passStopList?.stations">
+                      <h5>경유 정류장</h5>
+                      <li
+                        v-for="station in subPath.passStopList.stations"
+                        :key="station.index"
+                      >
+                        {{ station.stationName }} (ID: {{ station.stationID }})
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+            </div> -->
+
+            <div v-if="filteredStations[0].routeToDestination.subPath">
+              <h4>경로 세부 정보</h4>
+              <ul>
+                <li
+                  v-for="(subPath, index) in filteredStations[0]
+                    .routeToDestination.subPath"
+                  :key="index"
+                >
+                  <p>
+                    <strong>단계 {{ index + 1 }}:</strong>
+                    {{
+                      subPath.trafficType === 1
+                        ? '지하철'
+                        : subPath.trafficType === 2
+                        ? '버스'
+                        : '도보'
+                    }}
+                  </p>
+                  <p v-if="subPath.trafficType !== 3">
+                    {{ subPath.lane[0]?.name || subPath.lane[0]?.busNo }}:
+                    {{ subPath.startName }} → {{ subPath.endName }}
+                  </p>
+                  <p>거리: {{ subPath.distance }}m</p>
+                  <p>예상 시간: {{ subPath.sectionTime }}분</p>
+                  <p
+                    v-if="
+                      subPath.trafficType === 1 || subPath.trafficType === 2
+                    "
+                  >
+                    정류장 수: {{ subPath.stationCount || '정보 없음' }}
+                  </p>
+                  <ul
+                    v-if="
+                      subPath.passStopList?.stations &&
+                      subPath.trafficType === 2
+                    "
+                  >
+                    <h5>경유 정류장</h5>
+                    <li
+                      v-for="station in subPath.passStopList.stations"
+                      :key="station.index"
+                    >
+                      {{ station.stationName }} (ID: {{ station.stationID }})
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div class="recommendation-title">
-          {{
-            isRealTimeData
-              ? '실시간 여석 기반 추천 정류장'
-              : '예측된 재차인원 기반 추천 정류장'
-          }}
+          <span
+            class="highlight-text"
+            :class="{ realtime: isRealTimeData, prediction: !isRealTimeData }"
+          >
+            {{ isRealTimeData ? '실시간' : '예측된' }}
+          </span>
+          {{ isRealTimeData ? '여석' : '재차인원' }} 기반 추천 정류장
         </div>
         <div class="stations-list">
           <div
@@ -158,7 +280,7 @@
             </div>
             <div class="station-content">
               <div class="station-header">
-                <h4 class="station-name">
+                <h4 class="station-name" style="font-size: 19px">
                   {{ station.stationName }}
                   <span
                     v-if="isHighestProbability(station.idx)"
@@ -223,10 +345,10 @@
                 }})
               </p>
               <!-- 추가된 경로 정보 표시! -->
-              <div class="route-info" v-if="station.routeInfo">
-                <p>소요 시간: {{ station.routeInfo.totalTime }}분</p>
-                <p>환승 횟수: {{ station.routeInfo.transitCount }}</p>
-                <p>도보 시간: {{ station.routeInfo.walkTime }}m</p>
+              <div class="route-info-real" v-if="station.routeInfo">
+                <p>{{ station.routeInfo.totalTime }}분</p>
+                <p>{{ station.routeInfo.transitCount }}회 환승</p>
+                <p>도보 {{ station.routeInfo.walkTime }}m</p>
               </div>
               <p
                 v-if="index === sortedStations.length - 1"
@@ -247,20 +369,25 @@
                   "
                   class="no-arrival-info"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="info-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
+                  <div style="display: inline-block">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      height="24"
+                      style="
+                        fill: none;
+                        stroke: #808080;
+                        stroke-width: 2;
+                        stroke-linecap: round;
+                        stroke-linejoin: round;
+                      "
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  </div>
                   <p class="info-text">도착정보없음</p>
                   <p class="info-subtext">
                     {{
@@ -271,6 +398,7 @@
                   </p>
                 </div>
                 <div v-else>
+                  <p class="bus-title">첫 번째 버스</p>
                   <div class="bus-info">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -285,8 +413,7 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span
-                      >첫 번째 버스:
+                    <span>
                       {{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
                     >
                     <svg
@@ -307,9 +434,10 @@
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     <span
-                      >여석: {{ station.arrivalInfo[0]?.firstBus.seats }}</span
+                      >여석 {{ station.arrivalInfo[0]?.firstBus.seats }}</span
                     >
                   </div>
+                  <p class="bus-title">두 번째 버스</p>
                   <div class="bus-info">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -324,8 +452,7 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span
-                      >두 번째 버스:
+                    <span>
                       {{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
                     >
                     <svg
@@ -346,7 +473,7 @@
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     <span
-                      >여석: {{ station.arrivalInfo[0]?.secondBus.seats }}</span
+                      >여석 {{ station.arrivalInfo[0]?.secondBus.seats }}</span
                     >
                   </div>
                 </div>
@@ -957,16 +1084,20 @@ export default {
         <div style="
           background: #FF5722;
           color: #fff;
-          padding: 10px;
+          padding: 8px;
           border-radius: 50%;
           font-weight: bold;
-          font-size: 14px;
-          width: 30px;
-          height: 30px;
+          font-size: 12px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          text-align: center;
+          line-height: 1;
+          letter-spacing: -0.5px;
+          border: 2px solid #fff;
         ">
           출발
         </div>

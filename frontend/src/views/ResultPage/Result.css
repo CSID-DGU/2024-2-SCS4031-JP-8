@@ -623,3 +623,227 @@
 .zoom-button:hover {
   background: #f1f5f9;
 }
+
+.destination-route {
+  background-color: #f0f9ff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.destination-route-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 12px;
+}
+
+.destination-route-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+}
+
+.recommendation-section {
+  margin-top: 32px;
+}
+
+.recommendation-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 16px;
+}
+
+.final-station {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.final-station-icon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+.final-station-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+/* .time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.9375rem;
+  color: #4b5563;
+} */
+
+.time-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+}
+
+@media (max-width: 390px) {
+  .destination-route-title,
+  .recommendation-title {
+    font-size: 1.125rem;
+  }
+
+  .final-station-label,
+  .time-info {
+    font-size: 0.875rem;
+  }
+}
+
+.time-info {
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.time-info span {
+  display: inline-block;
+}
+
+.time-info span::before {
+  content: '🕒';
+  margin-right: 8px;
+}
+.route-info-real {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.route-info-real p {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin: 0;
+  color: #333;
+}
+
+.route-info-real p:not(:last-child) {
+  margin-right: 15px;
+}
+
+.route-info-real p::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.route-info-real p:nth-child(1)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 6 12 12 16 14'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.route-info-real p:nth-child(2)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'%3E%3C/path%3E%3Crect x='8' y='2' width='8' height='4' rx='1' ry='1'%3E%3C/rect%3E%3Cpath d='M9 14h6'%3E%3C/path%3E%3Cpath d='M9 10h6'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.route-info-real p:nth-child(3)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 15l-6 6-6-6'%3E%3C/path%3E%3Cpath d='M19 9l-6 6-6-6'%3E%3C/path%3E%3Cpath d='M19 3l-6 6-6-6'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.final-station-label {
+  display: inline-block;
+  background-color: #f0f4f8;
+  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 20px;
+  margin-top: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.final-station-label::before {
+  content: '🚏';
+  margin-right: 6px;
+}
+
+.final-station-label:hover {
+  background-color: #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.recommendation-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.highlight-text {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 30px;
+  border-radius: 4px;
+  font-weight: 700;
+  color: white;
+}
+
+.realtime {
+  background-color: #e74c3c;
+}
+
+.prediction {
+  background-color: #2ecc71;
+}
+
+.bus-info-container {
+  @apply bg-gray-100 rounded-lg p-4 shadow-md;
+}
+
+.bus-info-item {
+  @apply mb-4 last:mb-0;
+}
+
+.icon {
+  @apply text-blue-500;
+}
+.bus-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  padding: 0.2rem 0.2rem;
+  border-radius: 4px;
+  display: inline-block;
+}

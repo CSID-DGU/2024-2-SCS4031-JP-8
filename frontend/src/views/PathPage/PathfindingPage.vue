@@ -756,4 +756,42 @@ onMounted(async () => {
     padding: 6px 12px;
   }
 }
+.request-time {
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.request-time::before {
+  content: '🕒';
+  margin-right: 8px;
+}
+
+.time-label {
+  margin-right: 4px;
+}
+
+.time-value {
+  font-weight: 600;
+}
+.section-title {
+  font-size: 1.1rem; /* 글자 크기 줄임 */
+  font-weight: 600;
+  color: #2d3748;
+  text-align: left; /* 왼쪽 정렬 */
+  margin-bottom: 16px;
+}
+
+.section-title::after {
+  content: none;
+}
 </style>

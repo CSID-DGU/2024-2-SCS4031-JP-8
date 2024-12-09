@@ -1412,7 +1412,10 @@ export default {
             }
           )
 
-          console.log('[INFO] API 호출 응답:', response.data)
+          console.log(
+            '[INFO] 정류장별 길안내 상세 정보 API 호출 응답:',
+            response.data
+          )
           const paths = response.data.result?.path || []
           const shortestPath = paths.sort(
             (a, b) => a.info.totalTime - b.info.totalTime

@@ -113,35 +113,7 @@ export async function fetchBusArrivalInfo(
       '[INFO] Vuex 시간과 현재 시간이 2분 이상 차이납니다. CSV 데이터를 사용합니다.'
     )
 
-    const timeSlot = `${timeInfo.hour}시`
-    const dayType = getDayType(timeInfo.month, timeInfo.day)
-    const filePath = `${folderPath}${busNo}_${dayType}.csv`
-
-    console.log('[INFO] CSV 경로:', filePath)
-    console.log('[INFO] 대상 정류장명:', stationName)
-    console.log('[INFO] 시간대:', timeSlot)
-
-    const avgReboarding = await fetchAverageReboarding(
-      filePath,
-      stationName,
-      timeSlot,
-      idx
-    )
-
-    let baseSeats = 45
-    if (busNo === '5000B') {
-      baseSeats = 70
-    }
-
-    arrivalInfo.firstBus.remainSeats = Math.max(0, baseSeats - avgReboarding)
-
-    console.log(
-      `[DEBUG] baseSeats (${baseSeats}) - avgReboarding (${avgReboarding}) = ${
-        baseSeats - avgReboarding
-      }`
-    )
-
-    return arrivalInfo
+    return await fetchCSVData(busNo, folderPath, stationName, timeInfo, idx)
   }
 
   try {
@@ -214,7 +186,43 @@ export async function fetchBusArrivalInfo(
     return arrivalInfo
   } catch (apiError) {
     console.warn('[WARN] 실시간 API 호출 실패:', apiError)
+    console.log('[INFO] CSV 데이터로 대체합니다.')
+    return await fetchCSVData(busNo, folderPath, stationName, timeInfo, idx)
+  }
+}
+
+/**
+ * CSV 데이터를 가져오는 함수
+ */
+async function fetchCSVData(busNo, folderPath, stationName, timeInfo, idx) {
+  const timeSlot = `${timeInfo.hour}시`
+  const dayType = getDayType(timeInfo.month, timeInfo.day)
+  const filePath = `${folderPath}${busNo}_${dayType}.csv`
+
+  console.log('[INFO] CSV 경로:', filePath)
+  console.log('[INFO] 대상 정류장명:', stationName)
+  console.log('[INFO] 시간대:', timeSlot)
+
+  const avgReboarding = await fetchAverageReboarding(
+    filePath,
+    stationName,
+    timeSlot,
+    idx
+  )
+
+  let baseSeats = 45
+  if (busNo === '5000B') {
+    baseSeats = 70
   }
 
-  return arrivalInfo
+  const remainSeats = Math.max(0, baseSeats - avgReboarding)
+
+  console.log(
+    `[DEBUG] baseSeats (${baseSeats}) - avgReboarding (${avgReboarding}) = ${remainSeats}`
+  )
+
+  return {
+    firstBus: { locationNo: -1, predictTime: -1, remainSeats: remainSeats },
+    secondBus: { locationNo: -1, predictTime: -1, remainSeats: 0 }
+  }
 }

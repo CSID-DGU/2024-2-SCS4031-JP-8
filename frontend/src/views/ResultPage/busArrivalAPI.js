@@ -124,7 +124,7 @@ export async function fetchBusArrivalInfo(
       routeId
     })
     const response = await axios.get(
-      'http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
+      'https://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
       {
         params: {
           serviceKey,

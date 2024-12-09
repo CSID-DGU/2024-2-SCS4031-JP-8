@@ -950,7 +950,7 @@ export default {
             return
           }
 
-          const url = `http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem`
+          const url = `https://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem`
           const params = { serviceKey, stationId, routeId }
 
           console.log(

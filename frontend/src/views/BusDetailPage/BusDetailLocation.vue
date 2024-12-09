@@ -477,7 +477,7 @@ export default {
         console.log('[DEBUG] Gyeonggi Bus API Parameters:', params)
 
         const gyeonggiBusResponse = await axios.get(
-          'http://apis.data.go.kr/6410000/buslocationservice/getBusLocationList',
+          'https://apis.data.go.kr/6410000/buslocationservice/getBusLocationList',
           { params }
         )
         console.log(

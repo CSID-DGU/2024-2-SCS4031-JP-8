@@ -147,7 +147,7 @@ export async function fetchBusArrivalInfo(
   try {
     console.log('[INFO] 실시간 도착 정보 API 호출 중...')
     const response = await axios.get(
-      'http://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
+      'https://apis.data.go.kr/6410000/busarrivalservice/getBusArrivalItem',
       {
         params: {
           serviceKey,

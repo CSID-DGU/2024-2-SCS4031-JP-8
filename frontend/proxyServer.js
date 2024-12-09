@@ -17,7 +17,7 @@ app.get('/api/bus-info', async (req, res) => {
   const { busRouteId } = req.query
   const serviceKey =
     'EVTsGjdsoUlBtJTpdh/itgFJXzeeNK/BP4lN8my+i9AaoLGNln1kqRcyVP7CVRY8GsiXkX+OMl2HviEvq6hlfQ=='
-  const url = `http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRouteAll?serviceKey=${encodeURIComponent(
+  const url = `https://ws.bus.go.kr/api/rest/arrive/getArrInfoByRouteAll?serviceKey=${encodeURIComponent(
     serviceKey
   )}&busRouteId=${encodeURIComponent(busRouteId)}`
 

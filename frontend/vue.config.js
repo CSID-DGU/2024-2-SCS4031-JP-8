@@ -28,7 +28,7 @@ module.exports = defineConfig({
   devServer: {
     proxy: {
       '/api': {
-        target: 'http://apis.data.go.kr', // API 서버의 URL
+        target: 'https://apis.data.go.kr', // API 서버의 URL
         changeOrigin: true,
         pathRewrite: { '^/api': '' }
       },

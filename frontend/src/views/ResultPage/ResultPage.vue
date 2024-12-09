@@ -356,6 +356,22 @@
               </div>
             </div>
           </div>
+          <!-- 정류장이 없는 경우 -->
+          <div v-if="sortedStations.length === 0" class="no-stations">
+            <h4>매우 붐비는 시간대입니다.</h4>
+            <p
+              v-if="
+                lowestProbabilityStation && lowestProbabilityStation.stationName
+              "
+            >
+              {{ lowestProbabilityStation.stationName }} ({{
+                lowestProbabilityStation.stationDirection === 2
+                  ? '상행'
+                  : '하행'
+              }}) 를 추천합니다.
+            </p>
+            <p v-else>추천 정류장을 찾을 수 없습니다.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -639,11 +655,35 @@ export default {
       }
     }
     const sortedStations = computed(() => {
-      // 기존 필터링 및 정렬 로직 유지
+      // 필터링된 정류장 중 확률 '보통', '높음'인 정류장
       const filteredStationsAboveMedium = filteredStations.value.filter(
         (station) => ['보통', '높음'].includes(isHighProbability(station.idx))
       )
 
+      if (filteredStationsAboveMedium.length === 0) {
+        // 모든 정류장이 '낮음'인 경우, 가장 높은 확률의 정류장 찾기
+        const stationsWithProbability = selectedStations.value
+          .map((s) => ({
+            ...s,
+            station: filteredStations.value.find((f) => f.idx === s.seq)
+          }))
+          .filter((s) => s.station) // 정류장과 매칭된 데이터만 필터링
+
+        if (stationsWithProbability.length === 0) {
+          return [] // 매칭된 정류장이 없으면 빈 배열 반환
+        }
+
+        // 확률 기준으로 정렬 후 가장 높은 확률의 정류장 반환
+        const highestLowProbabilityStation = stationsWithProbability.sort(
+          (a, b) => b.probability - a.probability
+        )[0].station
+
+        return highestLowProbabilityStation
+          ? [highestLowProbabilityStation]
+          : []
+      }
+
+      // 기존 정렬 로직
       let sortedList = []
       if (currentSort.value === 'recommendation') {
         const highProbability = filteredStationsAboveMedium.filter(
@@ -673,17 +713,14 @@ export default {
         )
       }
 
-      // 추천 정류장만 따로 추출
+      // 추천 정류장을 맨 위로 올리는 로직 추가
       const recommendedStations = sortedList.filter((station) =>
         isHighestProbability(station.idx)
       )
-
-      // 추천 정류장을 제외한 나머지 정류장
       const nonRecommendedStations = sortedList.filter(
         (station) => !isHighestProbability(station.idx)
       )
 
-      // 추천 정류장을 맨 위에 배치
       return [...recommendedStations, ...nonRecommendedStations]
     })
 
@@ -1403,6 +1440,47 @@ export default {
 
       await Promise.all(promises)
     }
+    const lowestProbabilityStation = computed(() => {
+      const lowProbabilityStations = filteredStations.value.filter(
+        (station) => isHighProbability(station.idx) === '낮음'
+      )
+
+      if (lowProbabilityStations.length > 0) {
+        const maxProbabilityStation = lowProbabilityStations.reduce(
+          (max, station) => {
+            const currentProbability =
+              selectedStations.value.find((s) => s.seq === station.idx)
+                ?.probability || 0
+            const maxProbability =
+              selectedStations.value.find((s) => s.seq === max.idx)
+                ?.probability || 0
+
+            return currentProbability > maxProbability ? station : max
+          }
+        )
+
+        // 확률이 전부 0인 경우, 가장 먼 정류장을 찾음
+        if (
+          selectedStations.value.every(
+            (s) =>
+              lowProbabilityStations.find((station) => station.idx === s.seq)
+                ?.probability === 0
+          )
+        ) {
+          return lowProbabilityStations.reduce((farthest, station) => {
+            const currentDistance = station.idx // idx가 거리라고 가정
+            const farthestDistance = farthest.idx // idx가 거리라고 가정
+
+            return currentDistance > farthestDistance ? station : farthest
+          })
+        }
+
+        return maxProbabilityStation
+      }
+
+      return null
+    })
+
     const fetchShortestRouteToDestination = async () => {
       try {
         // 도착지 좌표 가져오기
@@ -1556,7 +1634,8 @@ export default {
       zoomIn,
       zoomOut,
       vuextimeInfo,
-      fetchShortestRouteToDestination
+      fetchShortestRouteToDestination,
+      lowestProbabilityStation
     }
   },
   props: {

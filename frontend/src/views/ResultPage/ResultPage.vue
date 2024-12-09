@@ -95,7 +95,7 @@
         <button @click="checkBusLocation" class="check-route-button">
           노선 정보 확인
         </button>
-        <div class="sort-options">
+        <!-- <div class="sort-options">
           <button
             @click="sortBy('probability')"
             :class="{ active: currentSort === 'probability' }"
@@ -110,155 +110,25 @@
           >
             거리순
           </button>
-        </div>
-        <div
-          v-if="
-            filteredStations.length > 0 &&
-            filteredStations[0].routeToDestination
-          "
-          class="destination-route"
-        >
-          <div>
-            <!-- <h3>도착지까지의 최단 경로</h3>
-            <p>
-              총 소요 시간:
-              {{ filteredStations[0].routeToDestination.totalTime }}분
-            </p>
-            <p>
-              환승 횟수:
-              {{ filteredStations[0].routeToDestination.transitCount }}
-            </p>
-            <p>
-              도보 거리: {{ filteredStations[0].routeToDestination.totalWalk }}m
-            </p>
-            <p>
-              예상 요금: {{ filteredStations[0].routeToDestination.payment }}원
-            </p>
-
-            <div v-if="filteredStations[0].routeToDestination.subPath">
-              <h4>경로 세부 정보</h4>
-              <ul>
-                <li
-                  v-for="(subPath, index) in filteredStations[0]
-                    .routeToDestination.subPath"
-                  :key="index"
-                >
-                  <p>
-                    <strong>단계 {{ index + 1 }}:</strong>
-                    {{
-                      subPath.trafficType === 1
-                        ? '지하철'
-                        : subPath.trafficType === 2
-                        ? '버스'
-                        : '도보'
-                    }}
-                  </p>
-
-                  <!-- 도보 -->
-            <!-- <div v-if="subPath.trafficType === 3">
-                    <p>도보 거리: {{ subPath.distance }}m</p>
-                    <p>도보 예상 시간: {{ subPath.sectionTime }}분</p>
-                  </div> -->
-
-            <!-- 지하철 -->
-            <!-- <div v-if="subPath.trafficType === 1">
-                    <p>노선: {{ subPath.lane[0]?.name }}</p>
-                    <p>승차역: {{ subPath.startName }}</p>
-                    <p>하차역: {{ subPath.endName }}</p>
-                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
-                    <p>정류장 수: {{ subPath.stationCount }}</p>
-                    <p>방면: {{ subPath.way }}</p>
-                    <ul v-if="subPath.passStopList?.stations">
-                      <h5>경유역</h5>
-                      <li
-                        v-for="station in subPath.passStopList.stations"
-                        :key="station.index"
-                      >
-                        {{ station.stationName }} (ID: {{ station.stationID }})
-                      </li>
-                    </ul>
-                  </div> -->
-
-            <!-- 버스 -->
-            <!-- <div v-if="subPath.trafficType === 2">
-                    <p>버스 번호: {{ subPath.lane[0]?.busNo }}</p>
-                    <p>승차 정류장: {{ subPath.startName }}</p>
-                    <p>하차 정류장: {{ subPath.endName }}</p>
-                    <p>소요 시간: {{ subPath.sectionTime }}분</p>
-                    <p>정류장 수: {{ subPath.stationCount }}</p>
-                    <ul v-if="subPath.passStopList?.stations">
-                      <h5>경유 정류장</h5>
-                      <li
-                        v-for="station in subPath.passStopList.stations"
-                        :key="station.index"
-                      >
-                        {{ station.stationName }} (ID: {{ station.stationID }})
-                      </li>
-                    </ul>
-                  </div>
-                </li>
-              </ul>
-            </div> -->
-
-            <div v-if="filteredStations[0].routeToDestination.subPath">
-              <h4>경로 세부 정보</h4>
-              <ul>
-                <li
-                  v-for="(subPath, index) in filteredStations[0]
-                    .routeToDestination.subPath"
-                  :key="index"
-                >
-                  <p>
-                    <strong>단계 {{ index + 1 }}:</strong>
-                    {{
-                      subPath.trafficType === 1
-                        ? '지하철'
-                        : subPath.trafficType === 2
-                        ? '버스'
-                        : '도보'
-                    }}
-                  </p>
-                  <p v-if="subPath.trafficType !== 3">
-                    {{ subPath.lane[0]?.name || subPath.lane[0]?.busNo }}:
-                    {{ subPath.startName }} → {{ subPath.endName }}
-                  </p>
-                  <p>거리: {{ subPath.distance }}m</p>
-                  <p>예상 시간: {{ subPath.sectionTime }}분</p>
-                  <p
-                    v-if="
-                      subPath.trafficType === 1 || subPath.trafficType === 2
-                    "
-                  >
-                    정류장 수: {{ subPath.stationCount || '정보 없음' }}
-                  </p>
-                  <ul
-                    v-if="
-                      subPath.passStopList?.stations &&
-                      subPath.trafficType === 2
-                    "
-                  >
-                    <h5>경유 정류장</h5>
-                    <li
-                      v-for="station in subPath.passStopList.stations"
-                      :key="station.index"
-                    >
-                      {{ station.stationName }} (ID: {{ station.stationID }})
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </div>
+        </div> -->
+        <div class="sort-container">
+          <div class="recommendation-title">
+            <span
+              class="highlight-text"
+              :class="{ realtime: isRealTimeData, prediction: !isRealTimeData }"
+            >
+              {{ isRealTimeData ? '실시간' : '예측된' }}
+            </span>
+            {{ isRealTimeData ? '여석' : '재차인원' }} 기반 추천 정류장
           </div>
-        </div>
-
-        <div class="recommendation-title">
-          <span
-            class="highlight-text"
-            :class="{ realtime: isRealTimeData, prediction: !isRealTimeData }"
-          >
-            {{ isRealTimeData ? '실시간' : '예측된' }}
-          </span>
-          {{ isRealTimeData ? '여석' : '재차인원' }} 기반 추천 정류장
+          <label for="sort-select" class="sort-label">정렬 기준</label>
+          <div class="sort-dropdown">
+            <select id="sort-select" v-model="currentSort">
+              <option value="recommendation">추천순</option>
+              <option value="probability">확률순</option>
+              <option value="distance">거리순</option>
+            </select>
+          </div>
         </div>
         <div class="stations-list">
           <div
@@ -306,6 +176,21 @@
                     <polyline points="17 6 23 6 23 12"></polyline>
                   </svg>
                   <svg
+                    v-else-if="isHighProbability(station.idx) === '보통'"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-trending-neutral"
+                  >
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                  </svg>
+                  <svg
                     v-else-if="isHighProbability(station.idx) === '낮음'"
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -320,21 +205,6 @@
                   >
                     <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                     <polyline points="17 18 23 18 23 12"></polyline>
-                  </svg>
-                  <svg
-                    v-else
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather feather-trending-neutral"
-                  >
-                    <line x1="4" y1="12" x2="20" y2="12"></line>
                   </svg>
                   {{ isHighProbability(station.idx) }}
                 </div>
@@ -542,7 +412,7 @@ export default {
     const busBasicInfo = ref({})
     const map = ref(null)
     const markers = ref([])
-    const currentSort = ref('probability')
+    //const currentSort = ref('probability')
     const currentPosition = ref(null)
     const lastFetchTime = ref(new Date())
     const isDataCurrent = computed(() => {
@@ -755,6 +625,43 @@ export default {
         loading.value = false
       }
     }
+    const sortedStations = computed(() => {
+      // "보통" 이상의 정류장만 필터링
+      const filteredStationsAboveMedium = filteredStations.value.filter(
+        (station) => ['보통', '높음'].includes(isHighProbability(station.idx))
+      )
+
+      if (currentSort.value === 'recommendation') {
+        // 추천순: 높음 -> 거리순(뒤부터 정렬), 보통 그대로
+        const highProbability = filteredStationsAboveMedium.filter(
+          (station) => isHighProbability(station.idx) === '높음'
+        )
+        const mediumProbability = filteredStationsAboveMedium.filter(
+          (station) => isHighProbability(station.idx) === '보통'
+        )
+
+        return [
+          ...highProbability.sort((a, b) => b.idx - a.idx), // 높음 중 뒤부터 정렬
+          ...mediumProbability // 보통 그대로
+        ]
+      } else if (currentSort.value === 'probability') {
+        // 확률순: 확률 높은 순서대로 정렬
+        return [...filteredStationsAboveMedium].sort((a, b) => {
+          const probA =
+            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+            0
+          const probB =
+            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+            0
+          return probB - probA
+        })
+      } else {
+        // 거리순: 뒤부터 정렬
+        return [...filteredStationsAboveMedium].sort((a, b) => b.idx - a.idx)
+      }
+    })
+
+    const currentSort = ref('recommendation') // 추천순을 기본값으로 설정
 
     const selectBusRoute = async (route) => {
       selectedRoute.value = route
@@ -1300,21 +1207,21 @@ export default {
       currentSort.value = sortType
     }
 
-    const sortedStations = computed(() => {
-      return [...filteredStations.value].sort((a, b) => {
-        if (currentSort.value === 'probability') {
-          const probA =
-            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
-            0
-          const probB =
-            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
-            0
-          return probB - probA
-        } else {
-          return a.idx - b.idx
-        }
-      })
-    })
+    // const sortedStations = computed(() => {
+    //   return [...filteredStations.value].sort((a, b) => {
+    //     if (currentSort.value === 'probability') {
+    //       const probA =
+    //         selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+    //         0
+    //       const probB =
+    //         selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+    //         0
+    //       return probB - probA
+    //     } else {
+    //       return a.idx - b.idx
+    //     }
+    //   })
+    // })
 
     const isHighProbability = (idx) => {
       const station = selectedStations.value.find((s) => s.idx === String(idx)) // idx를 문자열로 변환
@@ -1322,7 +1229,7 @@ export default {
 
       const { probability } = station
 
-      if (probability <= 0.4) {
+      if (probability <= 0.6) {
         return '낮음'
       } else if (probability <= 0.7) {
         return '보통'
@@ -1337,17 +1244,18 @@ export default {
       if (!selectedStations.value || selectedStations.value.length === 0)
         return false
 
+      // 최대 확률 계산
       const maxProbability = Math.max(
         ...selectedStations.value.map((s) => s.probability)
       )
 
-      // maxProbability와 일치하는 정류장 중 첫 번째를 찾음
-      const firstMaxStation = selectedStations.value.find(
-        (s) => s.probability === maxProbability
-      )
+      // maxProbability와 일치하는 정류장 중 가장 뒤에 있는 정류장을 찾음
+      const lastMaxStation = [...selectedStations.value]
+        .reverse()
+        .find((s) => s.probability === maxProbability)
 
-      // 현재 idx가 첫 번째로 발견된 정류장의 idx와 같은지 확인
-      return firstMaxStation && firstMaxStation.idx === String(idx)
+      // 현재 idx가 가장 뒤에 발견된 정류장의 idx와 같은지 확인
+      return lastMaxStation && lastMaxStation.idx === String(idx)
     }
 
     const selectStation = (station) => {

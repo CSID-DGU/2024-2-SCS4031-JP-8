@@ -95,7 +95,7 @@
         <button @click="checkBusLocation" class="check-route-button">
           노선 정보 확인
         </button>
-        <div class="sort-options">
+        <!-- <div class="sort-options">
           <button
             @click="sortBy('probability')"
             :class="{ active: currentSort === 'probability' }"
@@ -110,22 +110,29 @@
           >
             거리순
           </button>
-        </div>
-
-        <div class="recommendation-title">
-          <span
-            class="highlight-text"
-            :class="{ realtime: isRealTimeData, prediction: !isRealTimeData }"
-          >
-            {{ isRealTimeData ? '실시간' : '예측된' }}
-          </span>
-          {{ isRealTimeData ? '여석' : '재차인원' }} 기반 추천 정류장
+        </div> -->
+        <div class="sort-container">
+          <div class="recommendation-title">
+            <span
+              class="highlight-text"
+              :class="{ realtime: isRealTimeData, prediction: !isRealTimeData }"
+            >
+              {{ isRealTimeData ? '실시간' : '예측된' }}
+            </span>
+            {{ isRealTimeData ? '여석' : '재차인원' }} 기반 추천 정류장
+          </div>
+          <label for="sort-select" class="sort-label">정렬 기준</label>
+          <div class="sort-dropdown">
+            <select id="sort-select" v-model="currentSort">
+              <option value="recommendation">추천순</option>
+              <option value="probability">확률순</option>
+              <option value="distance">거리순</option>
+            </select>
+          </div>
         </div>
         <div class="stations-list">
           <div
-            v-for="(station, index) in sortedStations.filter((station) =>
-              ['보통', '높음'].includes(isHighProbability(station.idx))
-            )"
+            v-for="(station, index) in sortedStations"
             :key="station.stationID"
             class="station-timeline-item"
             :class="{
@@ -169,6 +176,21 @@
                     <polyline points="17 6 23 6 23 12"></polyline>
                   </svg>
                   <svg
+                    v-else-if="isHighProbability(station.idx) === '보통'"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="feather feather-trending-neutral"
+                  >
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                  </svg>
+                  <svg
                     v-else-if="isHighProbability(station.idx) === '낮음'"
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -183,21 +205,6 @@
                   >
                     <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                     <polyline points="17 18 23 18 23 12"></polyline>
-                  </svg>
-                  <svg
-                    v-else
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather feather-trending-neutral"
-                  >
-                    <line x1="4" y1="12" x2="20" y2="12"></line>
                   </svg>
                   {{ isHighProbability(station.idx) }}
                 </div>
@@ -405,7 +412,7 @@ export default {
     const busBasicInfo = ref({})
     const map = ref(null)
     const markers = ref([])
-    const currentSort = ref('probability')
+    //const currentSort = ref('probability')
     const currentPosition = ref(null)
     const lastFetchTime = ref(new Date())
     const isDataCurrent = computed(() => {
@@ -618,6 +625,43 @@ export default {
         loading.value = false
       }
     }
+    const sortedStations = computed(() => {
+      // "보통" 이상의 정류장만 필터링
+      const filteredStationsAboveMedium = filteredStations.value.filter(
+        (station) => ['보통', '높음'].includes(isHighProbability(station.idx))
+      )
+
+      if (currentSort.value === 'recommendation') {
+        // 추천순: 높음 -> 거리순(뒤부터 정렬), 보통 그대로
+        const highProbability = filteredStationsAboveMedium.filter(
+          (station) => isHighProbability(station.idx) === '높음'
+        )
+        const mediumProbability = filteredStationsAboveMedium.filter(
+          (station) => isHighProbability(station.idx) === '보통'
+        )
+
+        return [
+          ...highProbability.sort((a, b) => b.idx - a.idx), // 높음 중 뒤부터 정렬
+          ...mediumProbability // 보통 그대로
+        ]
+      } else if (currentSort.value === 'probability') {
+        // 확률순: 확률 높은 순서대로 정렬
+        return [...filteredStationsAboveMedium].sort((a, b) => {
+          const probA =
+            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+            0
+          const probB =
+            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+            0
+          return probB - probA
+        })
+      } else {
+        // 거리순: 뒤부터 정렬
+        return [...filteredStationsAboveMedium].sort((a, b) => b.idx - a.idx)
+      }
+    })
+
+    const currentSort = ref('recommendation') // 추천순을 기본값으로 설정
 
     const selectBusRoute = async (route) => {
       selectedRoute.value = route
@@ -1163,21 +1207,21 @@ export default {
       currentSort.value = sortType
     }
 
-    const sortedStations = computed(() => {
-      return [...filteredStations.value].sort((a, b) => {
-        if (currentSort.value === 'probability') {
-          const probA =
-            selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
-            0
-          const probB =
-            selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
-            0
-          return probB - probA
-        } else {
-          return a.idx - b.idx
-        }
-      })
-    })
+    // const sortedStations = computed(() => {
+    //   return [...filteredStations.value].sort((a, b) => {
+    //     if (currentSort.value === 'probability') {
+    //       const probA =
+    //         selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
+    //         0
+    //       const probB =
+    //         selectedStations.value.find((s) => s.seq === b.idx)?.probability ||
+    //         0
+    //       return probB - probA
+    //     } else {
+    //       return a.idx - b.idx
+    //     }
+    //   })
+    // })
 
     const isHighProbability = (idx) => {
       const station = selectedStations.value.find((s) => s.idx === String(idx)) // idx를 문자열로 변환

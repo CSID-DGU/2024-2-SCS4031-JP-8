@@ -393,7 +393,7 @@ const initializeMap = () => {
 const loadLane = (map, mapObj) => {
   console.log('[DEBUG] loadLane 호출:', mapObj)
 
-  const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
+  const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dgaGoLjsm7kPjeCSwsHSIg`
   fetch(url)
     .then((response) => {
       if (response.status !== 200) {

@@ -190,7 +190,7 @@ const searchPubTransPath = (map, sx, sy, ex, ey) => {
     EY: ey
   })
 
-  const url = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
+  const url = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&apiKey=dgaGoLjsm7kPjeCSwsHSIg`
   fetch(url)
     .then((response) => {
       console.log('[DEBUG] searchPubTransPath 응답 상태:', response.status)
@@ -215,7 +215,7 @@ const searchPubTransPath = (map, sx, sy, ex, ey) => {
 const loadLane = (map, mapObj, sx, sy, ex, ey) => {
   console.log('[DEBUG] loadLane 호출:', mapObj)
 
-  const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dWY4QsIARSUXfD8U1ZdSig`
+  const url = `https://api.odsay.com/v1/api/loadLane?mapObject=0:0@${mapObj}&apiKey=dgaGoLjsm7kPjeCSwsHSIg`
   fetch(url)
     .then((response) => {
       console.log('[DEBUG] loadLane 응답 상태:', response.status)

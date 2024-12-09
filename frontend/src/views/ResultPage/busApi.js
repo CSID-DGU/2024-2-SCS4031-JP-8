@@ -10,7 +10,7 @@ const busRouteData = {
 }
 
 // 오디세이 API 키
-const apiKey = 'dWY4QsIARSUXfD8U1ZdSig'
+const apiKey = 'dgaGoLjsm7kPjeCSwsHSIg'
 
 // 오디세이 버스 상세 노선 조회 API 호출 함수
 export async function fetchBusRouteDetails(busNo) {

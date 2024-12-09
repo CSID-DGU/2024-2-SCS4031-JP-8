@@ -220,22 +220,28 @@
                 <p>{{ station.routeInfo.transitCount }}회 환승</p>
                 <p>도보 {{ station.routeInfo.walkTime }}m</p>
               </div>
+              <!-- 고정된 정류장에만 "일반 지도 기본 정류장" 표시 -->
               <p
-                v-if="index === sortedStations.length - 1"
+                v-if="station.stationID === fixedFinalStation?.stationID"
                 class="final-station-label"
               >
                 일반 지도 기본 정류장
               </p>
+
               <div
                 class="bus-arrival-info"
                 :class="{
                   'no-info':
-                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                    !station.arrivalInfo ||
+                    station.arrivalInfo.length === 0 ||
+                    !isRealTimeData
                 }"
               >
                 <div
                   v-if="
-                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                    !station.arrivalInfo ||
+                    station.arrivalInfo.length === 0 ||
+                    !isRealTimeData
                   "
                   class="no-arrival-info"
                 >
@@ -283,8 +289,8 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>
-                      {{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
+                    <span
+                      >{{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -322,8 +328,8 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>
-                      {{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
+                    <span
+                      >{{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -349,6 +355,22 @@
                 </div>
               </div>
             </div>
+          </div>
+          <!-- 정류장이 없는 경우 -->
+          <div v-if="sortedStations.length === 0" class="no-stations">
+            <h4>매우 붐비는 시간대입니다.</h4>
+            <p
+              v-if="
+                lowestProbabilityStation && lowestProbabilityStation.stationName
+              "
+            >
+              {{ lowestProbabilityStation.stationName }} ({{
+                lowestProbabilityStation.stationDirection === 2
+                  ? '상행'
+                  : '하행'
+              }}) 를 추천합니다.
+            </p>
+            <p v-else>추천 정류장을 찾을 수 없습니다.</p>
           </div>
         </div>
       </div>
@@ -404,6 +426,7 @@ export default {
     const filteredRoutes = ref([])
     const selectedRoute = ref(null)
     const filteredStations = ref([])
+    const fixedFinalStation = ref(null) // 고정된 마지막 정류장
     const selectedStations = ref([])
     const arrivalInfo = ref(null)
     const routeId = ref(null)
@@ -421,30 +444,26 @@ export default {
       return timeDifference <= 60000 // 1분 이내
     })
     const isRealTimeData = computed(() => {
-      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
       const storeTime = new Date(
-        2024, // year을 하드코딩
-        timeInfo.value.month - 1,
-        timeInfo.value.day,
-        timeInfo.value.hour,
-        timeInfo.value.minute
+        2024, // year 하드코딩
+        vuextimeInfo.value.month - 1,
+        vuextimeInfo.value.day,
+        vuextimeInfo.value.hour,
+        vuextimeInfo.value.minute
       )
 
       const currentTime = new Date()
+      const timeDifference = Math.abs(currentTime - storeTime) / (1000 * 60) // 분 단위 차이 계산
 
-      const isStoreCurrent = Math.abs(currentTime - storeTime) <= 60000 // 1분 이내
-      const result = isStoreCurrent && isDataCurrent.value
+      console.log('[DEBUG] storeTime:', storeTime)
+      console.log('[DEBUG] currentTime:', currentTime)
+      console.log('[DEBUG] 시간 차이 (분):', timeDifference)
 
-      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
-      console.log('[DEBUG] isRealTimeData 계산 결과:', {
-        storeTime,
-        currentTime,
-        isStoreCurrent,
-        isDataCurrent: isDataCurrent.value,
-        result
-      })
+      // 2분 이상 차이가 나면 실시간 데이터로 간주하지 않음
+      const isStoreCurrent = timeDifference <= 2 && isDataCurrent.value
 
-      return result
+      console.log('[DEBUG] isRealTimeData:', isStoreCurrent)
+      return isStoreCurrent
     })
 
     // Duplicate function removed
@@ -477,7 +496,17 @@ export default {
       // }
       return false
     }
-
+    // filteredStations 변경 시 초기 마지막 정류장을 고정
+    watch(
+      () => filteredStations.value,
+      (newStations) => {
+        if (!fixedFinalStation.value && newStations.length > 0) {
+          fixedFinalStation.value = newStations[newStations.length - 1]
+          console.log('[INFO] 고정된 기본 정류장:', fixedFinalStation.value)
+        }
+      },
+      { immediate: true } // 초기 실행 포함
+    )
     const searchTransitRoutes = async () => {
       loading.value = true
       try {
@@ -626,13 +655,37 @@ export default {
       }
     }
     const sortedStations = computed(() => {
-      // "보통" 이상의 정류장만 필터링
+      // 필터링된 정류장 중 확률 '보통', '높음'인 정류장
       const filteredStationsAboveMedium = filteredStations.value.filter(
         (station) => ['보통', '높음'].includes(isHighProbability(station.idx))
       )
 
+      if (filteredStationsAboveMedium.length === 0) {
+        // 모든 정류장이 '낮음'인 경우, 가장 높은 확률의 정류장 찾기
+        const stationsWithProbability = selectedStations.value
+          .map((s) => ({
+            ...s,
+            station: filteredStations.value.find((f) => f.idx === s.seq)
+          }))
+          .filter((s) => s.station) // 정류장과 매칭된 데이터만 필터링
+
+        if (stationsWithProbability.length === 0) {
+          return [] // 매칭된 정류장이 없으면 빈 배열 반환
+        }
+
+        // 확률 기준으로 정렬 후 가장 높은 확률의 정류장 반환
+        const highestLowProbabilityStation = stationsWithProbability.sort(
+          (a, b) => b.probability - a.probability
+        )[0].station
+
+        return highestLowProbabilityStation
+          ? [highestLowProbabilityStation]
+          : []
+      }
+
+      // 기존 정렬 로직
+      let sortedList = []
       if (currentSort.value === 'recommendation') {
-        // 추천순: 높음 -> 거리순(뒤부터 정렬), 보통 그대로
         const highProbability = filteredStationsAboveMedium.filter(
           (station) => isHighProbability(station.idx) === '높음'
         )
@@ -640,13 +693,12 @@ export default {
           (station) => isHighProbability(station.idx) === '보통'
         )
 
-        return [
+        sortedList = [
           ...highProbability.sort((a, b) => b.idx - a.idx), // 높음 중 뒤부터 정렬
           ...mediumProbability // 보통 그대로
         ]
       } else if (currentSort.value === 'probability') {
-        // 확률순: 확률 높은 순서대로 정렬
-        return [...filteredStationsAboveMedium].sort((a, b) => {
+        sortedList = [...filteredStationsAboveMedium].sort((a, b) => {
           const probA =
             selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
             0
@@ -656,9 +708,20 @@ export default {
           return probB - probA
         })
       } else {
-        // 거리순: 뒤부터 정렬
-        return [...filteredStationsAboveMedium].sort((a, b) => b.idx - a.idx)
+        sortedList = [...filteredStationsAboveMedium].sort(
+          (a, b) => b.idx - a.idx
+        )
       }
+
+      // 추천 정류장을 맨 위로 올리는 로직 추가
+      const recommendedStations = sortedList.filter((station) =>
+        isHighestProbability(station.idx)
+      )
+      const nonRecommendedStations = sortedList.filter(
+        (station) => !isHighestProbability(station.idx)
+      )
+
+      return [...recommendedStations, ...nonRecommendedStations]
     })
 
     const currentSort = ref('recommendation') // 추천순을 기본값으로 설정
@@ -812,16 +875,26 @@ export default {
             transidx: firstStation.idx,
             searchTime: searchTime.value
           })
-          selectedStations.value = await calculateBoardingProbability({
-            arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
-            startSeq: filteredStations.value[0]?.idx,
-            endSeq,
-            filePath: filePath.value,
-            timeSlot: timeSlot.value,
-            stations,
-            transidx: firstStation.idx,
-            searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
-          })
+          selectedStations.value = (
+            await calculateBoardingProbability({
+              arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
+              startSeq: filteredStations.value[0]?.idx,
+              endSeq,
+              filePath: filePath.value,
+              timeSlot: timeSlot.value,
+              stations,
+              transidx: firstStation.idx,
+              searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
+            })
+          ).map((station) => ({
+            ...station,
+            probability: Math.floor(station.probability * 100) / 100 // 소숫점 둘째자리까지 자르기
+          }))
+
+          console.log(
+            '[INFO] 계산된 탑승 확률 (소숫점 둘째자리까지):',
+            selectedStations.value
+          )
 
           console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
           // selectedStations와 filteredStations의 idx를 연결
@@ -1367,6 +1440,47 @@ export default {
 
       await Promise.all(promises)
     }
+    const lowestProbabilityStation = computed(() => {
+      const lowProbabilityStations = filteredStations.value.filter(
+        (station) => isHighProbability(station.idx) === '낮음'
+      )
+
+      if (lowProbabilityStations.length > 0) {
+        const maxProbabilityStation = lowProbabilityStations.reduce(
+          (max, station) => {
+            const currentProbability =
+              selectedStations.value.find((s) => s.seq === station.idx)
+                ?.probability || 0
+            const maxProbability =
+              selectedStations.value.find((s) => s.seq === max.idx)
+                ?.probability || 0
+
+            return currentProbability > maxProbability ? station : max
+          }
+        )
+
+        // 확률이 전부 0인 경우, 가장 먼 정류장을 찾음
+        if (
+          selectedStations.value.every(
+            (s) =>
+              lowProbabilityStations.find((station) => station.idx === s.seq)
+                ?.probability === 0
+          )
+        ) {
+          return lowProbabilityStations.reduce((farthest, station) => {
+            const currentDistance = station.idx // idx가 거리라고 가정
+            const farthestDistance = farthest.idx // idx가 거리라고 가정
+
+            return currentDistance > farthestDistance ? station : farthest
+          })
+        }
+
+        return maxProbabilityStation
+      }
+
+      return null
+    })
+
     const fetchShortestRouteToDestination = async () => {
       try {
         // 도착지 좌표 가져오기
@@ -1498,6 +1612,7 @@ export default {
       filteredRoutes,
       selectedRoute,
       filteredStations,
+      fixedFinalStation,
       selectedStations,
       busBasicInfo,
       arrivalInfo,
@@ -1519,7 +1634,8 @@ export default {
       zoomIn,
       zoomOut,
       vuextimeInfo,
-      fetchShortestRouteToDestination
+      fetchShortestRouteToDestination,
+      lowestProbabilityStation
     }
   },
   props: {

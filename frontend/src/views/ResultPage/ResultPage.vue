@@ -230,12 +230,16 @@
                 class="bus-arrival-info"
                 :class="{
                   'no-info':
-                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                    !station.arrivalInfo ||
+                    station.arrivalInfo.length === 0 ||
+                    !isRealTimeData
                 }"
               >
                 <div
                   v-if="
-                    !station.arrivalInfo || station.arrivalInfo.length === 0
+                    !station.arrivalInfo ||
+                    station.arrivalInfo.length === 0 ||
+                    !isRealTimeData
                   "
                   class="no-arrival-info"
                 >
@@ -283,8 +287,8 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>
-                      {{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
+                    <span
+                      >{{ station.arrivalInfo[0]?.firstBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -322,8 +326,8 @@
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>
-                      {{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
+                    <span
+                      >{{ station.arrivalInfo[0]?.secondBus.time }}분 후</span
                     >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -421,30 +425,26 @@ export default {
       return timeDifference <= 60000 // 1분 이내
     })
     const isRealTimeData = computed(() => {
-      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
       const storeTime = new Date(
-        2024, // year을 하드코딩
-        timeInfo.value.month - 1,
-        timeInfo.value.day,
-        timeInfo.value.hour,
-        timeInfo.value.minute
+        2024, // year 하드코딩
+        vuextimeInfo.value.month - 1,
+        vuextimeInfo.value.day,
+        vuextimeInfo.value.hour,
+        vuextimeInfo.value.minute
       )
 
       const currentTime = new Date()
+      const timeDifference = Math.abs(currentTime - storeTime) / (1000 * 60) // 분 단위 차이 계산
 
-      const isStoreCurrent = Math.abs(currentTime - storeTime) <= 60000 // 1분 이내
-      const result = isStoreCurrent && isDataCurrent.value
+      console.log('[DEBUG] storeTime:', storeTime)
+      console.log('[DEBUG] currentTime:', currentTime)
+      console.log('[DEBUG] 시간 차이 (분):', timeDifference)
 
-      console.log('[DEBUG] timeInfo 데이터:', timeInfo.value)
-      console.log('[DEBUG] isRealTimeData 계산 결과:', {
-        storeTime,
-        currentTime,
-        isStoreCurrent,
-        isDataCurrent: isDataCurrent.value,
-        result
-      })
+      // 2분 이상 차이가 나면 실시간 데이터로 간주하지 않음
+      const isStoreCurrent = timeDifference <= 2 && isDataCurrent.value
 
-      return result
+      console.log('[DEBUG] isRealTimeData:', isStoreCurrent)
+      return isStoreCurrent
     })
 
     // Duplicate function removed
@@ -626,13 +626,13 @@ export default {
       }
     }
     const sortedStations = computed(() => {
-      // "보통" 이상의 정류장만 필터링
+      // 기존 필터링 및 정렬 로직 유지
       const filteredStationsAboveMedium = filteredStations.value.filter(
         (station) => ['보통', '높음'].includes(isHighProbability(station.idx))
       )
 
+      let sortedList = []
       if (currentSort.value === 'recommendation') {
-        // 추천순: 높음 -> 거리순(뒤부터 정렬), 보통 그대로
         const highProbability = filteredStationsAboveMedium.filter(
           (station) => isHighProbability(station.idx) === '높음'
         )
@@ -640,13 +640,12 @@ export default {
           (station) => isHighProbability(station.idx) === '보통'
         )
 
-        return [
+        sortedList = [
           ...highProbability.sort((a, b) => b.idx - a.idx), // 높음 중 뒤부터 정렬
           ...mediumProbability // 보통 그대로
         ]
       } else if (currentSort.value === 'probability') {
-        // 확률순: 확률 높은 순서대로 정렬
-        return [...filteredStationsAboveMedium].sort((a, b) => {
+        sortedList = [...filteredStationsAboveMedium].sort((a, b) => {
           const probA =
             selectedStations.value.find((s) => s.seq === a.idx)?.probability ||
             0
@@ -656,9 +655,23 @@ export default {
           return probB - probA
         })
       } else {
-        // 거리순: 뒤부터 정렬
-        return [...filteredStationsAboveMedium].sort((a, b) => b.idx - a.idx)
+        sortedList = [...filteredStationsAboveMedium].sort(
+          (a, b) => b.idx - a.idx
+        )
       }
+
+      // 추천 정류장만 따로 추출
+      const recommendedStations = sortedList.filter((station) =>
+        isHighestProbability(station.idx)
+      )
+
+      // 추천 정류장을 제외한 나머지 정류장
+      const nonRecommendedStations = sortedList.filter(
+        (station) => !isHighestProbability(station.idx)
+      )
+
+      // 추천 정류장을 맨 위에 배치
+      return [...recommendedStations, ...nonRecommendedStations]
     })
 
     const currentSort = ref('recommendation') // 추천순을 기본값으로 설정
@@ -812,16 +825,26 @@ export default {
             transidx: firstStation.idx,
             searchTime: searchTime.value
           })
-          selectedStations.value = await calculateBoardingProbability({
-            arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
-            startSeq: filteredStations.value[0]?.idx,
-            endSeq,
-            filePath: filePath.value,
-            timeSlot: timeSlot.value,
-            stations,
-            transidx: firstStation.idx,
-            searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
-          })
+          selectedStations.value = (
+            await calculateBoardingProbability({
+              arrivalInfo: arrivalInfo.value.firstBus?.remainSeats || 0,
+              startSeq: filteredStations.value[0]?.idx,
+              endSeq,
+              filePath: filePath.value,
+              timeSlot: timeSlot.value,
+              stations,
+              transidx: firstStation.idx,
+              searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
+            })
+          ).map((station) => ({
+            ...station,
+            probability: Math.floor(station.probability * 100) / 100 // 소숫점 둘째자리까지 자르기
+          }))
+
+          console.log(
+            '[INFO] 계산된 탑승 확률 (소숫점 둘째자리까지):',
+            selectedStations.value
+          )
 
           console.log('[INFO] 계산된 탑승 확률:', selectedStations.value)
           // selectedStations와 filteredStations의 idx를 연결

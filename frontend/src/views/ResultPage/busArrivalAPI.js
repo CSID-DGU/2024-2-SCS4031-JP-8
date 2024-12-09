@@ -231,6 +231,11 @@ export async function fetchBusArrivalInfo(
 
   // 잔여 좌석 계산
   arrivalInfo.firstBus.remainSeats = Math.max(0, baseSeats - avgReboarding)
+  console.log(
+    `[DEBUG] baseSeats (${baseSeats}) - avgReboarding (${avgReboarding}) = ${
+      baseSeats - avgReboarding
+    }`
+  )
 
   // 최종 잔여 좌석 값 확인 로그
   console.log(

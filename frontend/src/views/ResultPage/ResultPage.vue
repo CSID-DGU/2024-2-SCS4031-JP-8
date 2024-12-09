@@ -220,12 +220,14 @@
                 <p>{{ station.routeInfo.transitCount }}회 환승</p>
                 <p>도보 {{ station.routeInfo.walkTime }}m</p>
               </div>
+              <!-- 고정된 정류장에만 "일반 지도 기본 정류장" 표시 -->
               <p
-                v-if="index === sortedStations.length - 1"
+                v-if="station.stationID === fixedFinalStation?.stationID"
                 class="final-station-label"
               >
                 일반 지도 기본 정류장
               </p>
+
               <div
                 class="bus-arrival-info"
                 :class="{
@@ -408,6 +410,7 @@ export default {
     const filteredRoutes = ref([])
     const selectedRoute = ref(null)
     const filteredStations = ref([])
+    const fixedFinalStation = ref(null) // 고정된 마지막 정류장
     const selectedStations = ref([])
     const arrivalInfo = ref(null)
     const routeId = ref(null)
@@ -477,7 +480,17 @@ export default {
       // }
       return false
     }
-
+    // filteredStations 변경 시 초기 마지막 정류장을 고정
+    watch(
+      () => filteredStations.value,
+      (newStations) => {
+        if (!fixedFinalStation.value && newStations.length > 0) {
+          fixedFinalStation.value = newStations[newStations.length - 1]
+          console.log('[INFO] 고정된 기본 정류장:', fixedFinalStation.value)
+        }
+      },
+      { immediate: true } // 초기 실행 포함
+    )
     const searchTransitRoutes = async () => {
       loading.value = true
       try {
@@ -1521,6 +1534,7 @@ export default {
       filteredRoutes,
       selectedRoute,
       filteredStations,
+      fixedFinalStation,
       selectedStations,
       busBasicInfo,
       arrivalInfo,

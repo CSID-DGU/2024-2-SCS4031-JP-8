@@ -110,7 +110,9 @@
 
         <!-- 경로 세부 사항 (타임라인 스타일) -->
         <div class="route-details">
-          <h3 class="section-title">경로 <br />세부 단계</h3>
+          <h3 class="section-title" style="font-size: 1.1rem">
+            경로 <br />세부 단계
+          </h3>
           <div class="timeline">
             <div
               v-for="(segment, index) in route.subPath.filter(

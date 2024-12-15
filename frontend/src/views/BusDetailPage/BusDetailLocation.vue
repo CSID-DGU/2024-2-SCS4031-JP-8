@@ -510,7 +510,6 @@ export default {
           }
         })
 
-        // Update bus markers on the map
         this.updateBusMarkers(busLocations)
       } catch (error) {
         console.error('[DEBUG] Error in FetchBusLocations:', error)
@@ -538,13 +537,12 @@ export default {
     },
     updateBusMarkers(busLocations) {
       console.log('[DEBUG] Updating bus markers on the map.')
-      // Remove existing bus markers
+
       if (this.busMarkers) {
         this.busMarkers.forEach((marker) => marker.setMap(null))
       }
       this.busMarkers = []
 
-      // Add new bus markers
       busLocations.forEach((bus) => {
         const marker = new naver.maps.Marker({
           position: new naver.maps.LatLng(bus.lat, bus.lng),
@@ -561,7 +559,7 @@ export default {
     },
     startRealTimeUpdates() {
       console.log('[DEBUG] Starting real-time updates.')
-      // Update bus locations every 30 seconds
+
       this.updateInterval = setInterval(() => {
         this.fetchBusLocations()
       }, 30000)

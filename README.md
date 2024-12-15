@@ -156,9 +156,50 @@
 
 <br>
 
-<!--### 🚀 서비스 구현 결과
+### 🚀 서비스 구현 결과
 
-<br>-->
+<br>
+
+| 메인페이지 | 출발지 검색 | 도착지 검색 | 시간 선택 |
+|-------|-------|-------|-------|
+| <img src="https://github.com/user-attachments/assets/fbaee89e-d1e7-4fad-93c7-c6d0c38d05ae" width="200"> | <img src="https://github.com/user-attachments/assets/06f22aea-b673-4642-b3b0-61c14ca35b80" width="200"> | <img src="https://github.com/user-attachments/assets/5725c97d-9a19-4393-85dd-626c62f0fcd6" width="200"> | <img src="https://github.com/user-attachments/assets/ba672e38-73bd-464a-92e3-aabf4fa1d13b" width="200"> |
+
+
+> 1. **출발지-도착지 검색**
+* 최근 검색 기능
+* 즐겨찾기 제공
+> 2. **시간 선택**
+* 실시간 선택 버튼
+* 날짜, 시각, 분, 오전/오후 선택 모달 창
+
+<br><br>
+
+| 실시간 추천 | 실시간 추천 | 경로 안내 | 세부 경로 안내 |
+|-------|-------|-------|-------|
+| <img src="https://github.com/user-attachments/assets/bace7f7f-649f-4684-be87-0c0d4996e0a4" width="200"> | <img src="https://github.com/user-attachments/assets/0911b524-f4d2-4de7-b30d-135afff7ed79" width="200"> | <img src="https://github.com/user-attachments/assets/067accd8-3eb9-468d-9575-284e7255aee9" width="200"> | <img src="https://github.com/user-attachments/assets/72be911a-2786-44eb-997c-209e78c8a4ba" width="200"> |
+
+> 3. **광역버스 승차 가능 여부를 판단하여 최적의 정류장 추천**
+* 길찾기 구간 중 현재 운행하는 광역버스 노선 목록
+● 선택된 노선 정류장 추천
+* 현재 위치와 추천에 활용된 5개의 정류장을 나타낸 지도
+* 실시간 여석 기반 / 예측된 재차인원 기반으로 잔여 좌석을 예측하여 승차 가능 확률 계산하고 추천 정류장 제공
+* 정류장명, 확률(높음, 보통), 정류장 번호, 정류장까지의 경로 기본 정보, 공공데이터포털 API를 활용하여 첫 번째 버스와 두 번째 버스의 실시간 도착 정보 및 잔여 좌석 정보 제공
+> 4. **정류장까지 가기 위한 경로 안내**
+* 버스, 지하철, 버스+지하철로 나누어 안내
+* 전체적인 경로를 요약해서 표시
+* 세부 경로 확인 버튼 클릭 시 세부적인 경로 및 출발, 도착지를 지도에 표시
+* 총 소요 시간, 요금, 거리, 도보 거리, 대기 시간과 경로 세부 단계 및 경유 정류장, 정류장 정보 등을 안내
+  
+<br><br>
+
+| 예측 추천 | 버스 노선 상세 안내 |  | 노선 없음 |
+|-------|-------|-------|-------|
+| <img src="https://github.com/user-attachments/assets/8de0f27c-d6c1-4da0-aebd-760a666b312d" width="200"> | <img src="https://github.com/user-attachments/assets/ea88e55b-c274-4ffd-98f5-c1d0e7f747d9" width="200"> | <img src="https://github.com/user-attachments/assets/00f1c427-c73c-4ebf-89df-4664a9771d05" width="200"> | <img src="https://github.com/user-attachments/assets/b4d81cb6-b097-464f-8c09-6620ab1a46a4" width="200"> |
+> 5. **선택된 노선 정보 확인**
+* 지도 및 노선 상세 정보 제공
+* 노선의 현재 실시간 버스 위치 정보 및 새로고침 기능 제공
+
+<br>
 
 
 ### 📊 기대효과

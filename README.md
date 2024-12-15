@@ -13,7 +13,7 @@
 
 | 장 민 | 박주한 | 정영균 | 정지원 |
 | :-----------------: | :-----------------: | :-----------------: | :----------------: |
-| <img src="https://github.com/user-attachments/assets/366f8c51-8cc2-4a2f-8acd-789431a6f1d3" width="120" height="120" /> |  <img src="https://github.com/user-attachments/assets/192ecbc1-7f14-4dde-9e09-e9dd180b272e" width="120" height="120" />  |   <img src="https://github.com/user-attachments/assets/fea9c564-9334-4ce0-b974-a01f472f44db" width="120" height="120" />  |   <img src="https://github.com/user-attachments/assets/9dfd6b44-71f5-4d9d-acd8-27987ebf15dd" width="120" height="120" /> |
+| <img src="https://github.com/user-attachments/assets/366f8c51-8cc2-4a2f-8acd-789431a6f1d3" width="120" height="120" /> | <img src="https://github.com/user-attachments/assets/fea9c564-9334-4ce0-b974-a01f472f44db" width="120" height="120" />  |   <img src="https://github.com/user-attachments/assets/192ecbc1-7f14-4dde-9e09-e9dd180b272e" width="120" height="120" />  |   <img src="https://github.com/user-attachments/assets/9dfd6b44-71f5-4d9d-acd8-27987ebf15dd" width="120" height="120" /> |
 | 팀장, 백엔드  | 프론트엔드    | 백엔드  | 프론트엔드 |
 | 산업시스템공학과  | 사학과      | 일어일문학과 | 건축공학전공 |
 | 융합SW연계전공    | 융합SW연계전공    | 융합SW연계전공 | 융합SW연계전공 |

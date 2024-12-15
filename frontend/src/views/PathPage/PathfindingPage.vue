@@ -4,7 +4,7 @@
       <button class="back-button" @click="goBack">
         <ArrowLeftIcon size="24" class="back-icon" />
       </button>
-      <h1>경로 및 정류장 추천</h1>
+      <h1>정류장까지의 경로 안내</h1>
     </header>
 
     <div class="location-info">
@@ -51,7 +51,7 @@
     <div v-if="loading" class="loading-spinner">로딩 중...</div>
 
     <div v-else-if="filteredRoutes.length === 0" class="no-routes">
-      <p>검색 결과가 없습니다.</p>
+      <p>도보로 이동할 수 있는 거리거나 검색 결과가 없습니다.</p>
     </div>
 
     <div v-else class="route-list">

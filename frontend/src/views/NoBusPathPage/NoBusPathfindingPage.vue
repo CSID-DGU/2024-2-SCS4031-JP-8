@@ -19,7 +19,7 @@
             제공하는 버스 노선이 없어 일반 길찾기를 제공합니다.
           </h2>
           <h1 class="text-2xl font-bold tracking-tight text-gray-800">
-            경로 및 정류장 추천
+            일반 대중교통 경로 안내
           </h1>
         </div>
       </div>

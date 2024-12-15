@@ -5,7 +5,24 @@
 > 잔여좌석을 반영한 최적 정류장 길찾기 : 서울-경기 광역버스
 <br>
 
+<br>
 
+## ▶ 실행 방법
+1. **다운로드**: 폴더명을 특수문자 없는 소문자로 하여 Fork 받거나 ZIP 파일을 다운로드 합니다.
+2. **폴더 이동**: 이후 2024-2-SCS4031-JP-8 폴더에서 VSC를 실행하여 frontend 폴더로 이동합니다.
+     ```bash
+     cd frontend
+3. **환경 설정**: Node.js, npm, vue-cli를 설치합니다.
+     ```bash
+     npm install -g @vue/cli
+4. **의존성 설치**:<br>
+   ```bash
+   npm install 
+5. **프로젝트 실행**: 실행 명령어로 프로젝트를 시작합니다.
+   ```bash
+   npm run dev
+
+<br>
 
 
 ### 📝 커밋 규칙

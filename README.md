@@ -6,6 +6,17 @@
 (잔여좌석을 반영한 최단시간 길 찾기 : 서울-경기 광역버스)
 <br>
 
+### 🧑‍🤝‍🧑 팀 구성원
+
+| 장 민 | 박주한 | 정영균 | 정지원 |
+| :-----------------: | :-----------------: | :-----------------: | :----------------: |
+| 팀장, 백엔드  | 프론트엔드    | 프론트엔드  | 백엔드 |
+| 산업시스템공학과  | 사학과      | 일어일문학과 | 건축공학전공 |
+| 융합SW연계전공    | 융합SW연계전공    | 융합SW연계전공 | 융합SW연계전공 |
+| [@JangMin99](https://github.com/JangMin99) | [@pjh4028](https://github.com/pjh0428) | [@suipizza](https://github.com/suipizza) | [@study2895](https://github.com/study2895) |
+### 👨‍🏫 지도교수
+**📘 융합SW교육원 신연순&박효순 교수님**
+
 <br>
 
 ### ❗ 주의사항
@@ -30,6 +41,36 @@
 
 <br>
 
+
+### 📝 프로젝트 개요 및 개발 동기
+### 🎯 개발 목표 및 범위
+### 🏗 설계 및 구현
+- ### 📂 프로젝트 구조
+- ### 🧩 다이어그램
+### 🚀 서비스 구현 결과
+### 🌈 기대효과
+### 🛠 기술 스택
+
+| **분야**    | **기술 스택**   |
+|---------------|-------------|
+| **Frontend**  | <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=flat-square&logo=Vue.js&logoColor=white"> <img src="https://img.shields.io/badge/Vuex-41B883?style=flat-square&logo=Vue.js&logoColor=white"> <img src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white"> <img src="https://img.shields.io/badge/Javascript-F7DF1E?style=flat-square&logo=javascript&logoColor=black"> <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white"> |
+| **Backend**   | <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Prophet-FF9900?style=flat-square&logo=prophet&logoColor=white"> <img src="https://img.shields.io/badge/LSTM-006400?style=flat-square&logo=deep-learning&logoColor=white"> <img src="https://img.shields.io/badge/SARIMA-800080?style=flat-square&logo=analytics&logoColor=white"> |
+| **DevOps**    | <img src="https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonaws&logoColor=white"> <img src="https://img.shields.io/badge/AWS EC2-FF9900?style=flat-square&logo=amazonaws&logoColor=white"> |
+| **Tools**     | <img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white"> <img src="https://img.shields.io/badge/Figma-F24E1E?style=flat-square&logo=figma&logoColor=white"> <img src="https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white"> <img src="https://img.shields.io/badge/Github-181717?style=flat-square&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white"> |
+| **API** | <img src="https://img.shields.io/badge/카카오 키워드 장소 검색 API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black"> <br><img src="https://img.shields.io/badge/네이버 지도 Web Dynamic Map API-03C75A?style=flat-square&logo=naver&logoColor=white"> <br><img src="https://img.shields.io/badge/Geolocation 위치 정보 제공 API-FF5733?style=flat-square&logo=googlemaps&logoColor=white"> <br><img src="https://img.shields.io/badge/오디세이 대중교통 API-fc9d38?style=flat-square&logoColor=white"> 버스 노선 조회, 노선 상세정보 조회, 정류장 세부 정보 조회,<br>노선 그래픽 데이터 검색, 대중교통 정류장 검색, 대중교통 길찾기<br><img src="https://img.shields.io/badge/공공데이터포탈 API-0054A6?style=flat-square&logo=data&logoColor=white"> 경기도_버스위치정보 조회, 경기도_버스도착정보 조회 |
+| **사용 데이터**     | <img src="https://img.shields.io/badge/교통카드 빅데이터 통합정보시스템-1E90FF?style=flat-square&logo=databricks&logoColor=white"> 노선별 이용량, 노선별 차내 재차인원 데이터 |
+
+<br>
+
+
+
+
+
+
+
+
+
+<br>
 
 ### 📝 커밋 규칙
 #### 커밋 헤더

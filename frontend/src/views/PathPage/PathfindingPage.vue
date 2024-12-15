@@ -629,7 +629,6 @@ onMounted(async () => {
   background-color: #2563eb;
 }
 
-/* 경로 세부 사항 스타일 */
 .route-details {
   margin-top: 20px;
 }
@@ -784,10 +783,10 @@ onMounted(async () => {
   font-weight: 600;
 }
 .section-title {
-  font-size: 1.1rem; /* 글자 크기 줄임 */
+  font-size: 1.1rem; 
   font-weight: 600;
   color: #2d3748;
-  text-align: left; /* 왼쪽 정렬 */
+  text-align: left; 
   margin-bottom: 16px;
 }
 

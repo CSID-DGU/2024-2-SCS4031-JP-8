@@ -626,7 +626,7 @@ export default {
                     allRoutes.push({
                       busNo: busNo,
                       directionText: directionText(direction),
-                      stationID: segment.startID, // 수정된 부분: 첫 번째 정류장 ID가 저장됨
+                      stationID: segment.startID, // 첫 번째 정류장 ID 저장
                       stationName: segment.startName,
                       localStationID: targetStation?.localStationID,
                       firstStation: {
@@ -818,7 +818,7 @@ export default {
 
         console.log('[INFO] 필터링된 정류장 데이터:', stations)
 
-        // 수정된 부분: 선택한 정류장과 앞의 4개 정류장을 포함하여 저장
+        // 선택한 정류장과 앞의 4개 정류장을 포함하여 저장
         filteredStations.value = (() => {
           const targetStationIndex = stations.findIndex(
             (station) =>
@@ -1125,7 +1125,7 @@ export default {
           })
           markers.value.push(departureMarker)
 
-          // **출발지 좌표를 Bounds에 추가**
+          // 출발지 좌표를 Bounds에 추가
           bounds.extend(
             new naver.maps.LatLng(departureCoords.y, departureCoords.x)
           )
@@ -1183,7 +1183,7 @@ export default {
           map: map.value
         })
 
-        // **정류장 좌표를 Bounds에 추가**
+        // 정류장 좌표를 Bounds에 추가
         bounds.extend(position)
 
         markers.value.push(marker)
@@ -1198,7 +1198,7 @@ export default {
         strokeOpacity: 0.8
       })
 
-      // **Bounds를 지도에 적용**
+      // Bounds를 지도에 적용
       map.value.fitBounds(bounds)
       console.log('[INFO] 지도 경계 설정 완료')
     }

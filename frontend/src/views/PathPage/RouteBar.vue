@@ -64,9 +64,9 @@ const segmentSectionTime = (segment) => {
 }
 
 const shouldShowDivider = (index, segment) => {
-  if (index === 0) return false // Don't show divider for the first segment
-  if (segment.trafficType === 3) return false // Don't show divider for walking segments
-  if (segmentSectionTime(segment) === 0) return false // Don't show divider for 0-minute segments
+  if (index === 0) return false
+  if (segment.trafficType === 3) return false
+  if (segmentSectionTime(segment) === 0) return false
   return true
 }
 </script>
@@ -75,16 +75,16 @@ const shouldShowDivider = (index, segment) => {
 .route-bar-container {
   margin: 20px 0;
   padding: 10px 0;
-  width: 100%; /* 90%에서 100%로 변경 */
-  max-width: 500px; /* 400px에서 500px로 변경 */
+  width: 100%;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .route-bar {
   display: flex;
-  height: 20px; /* 28px에서 20px로 줄임 */
-  border-radius: 10px; /* 14px에서 10px로 줄임 */
+  height: 20px;
+  border-radius: 10px;
   overflow: visible;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -105,23 +105,23 @@ const shouldShowDivider = (index, segment) => {
   font-weight: 600;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   white-space: nowrap;
-  font-size: 10px; /* 12px에서 10px로 변경 */
-  padding: 0 2px; /* 좌우 패딩 추가 */
+  font-size: 10px;
+  padding: 0 2px;
 }
 
 .segment-divider {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px; /* 32px에서 24px로 줄임 */
-  height: 24px; /* 32px에서 24px로 줄임 */
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   z-index: 1;
-  left: -12px; /* -16px에서 -12px로 조정 */
+  left: -12px;
 }
 
 .start-divider {
-  left: -12px; /* -16px에서 -12px로 조정 */
+  left: -12px;
   background-color: #b0b0b0;
 }
 
@@ -137,17 +137,17 @@ const shouldShowDivider = (index, segment) => {
 
 @media (max-width: 768px) {
   .route-bar {
-    height: 16px; /* 24px에서 16px로 줄임 */
+    height: 16px;
   }
 
   .segment-time {
-    font-size: 9px; /* 10px에서 9px로 변경 */
+    font-size: 9px;
   }
 
   .segment-divider {
-    width: 20px; /* 28px에서 20px로 줄임 */
-    height: 20px; /* 28px에서 20px로 줄임 */
-    left: -10px; /* -14px에서 -10px로 조정 */
+    width: 20px;
+    height: 20px;
+    left: -10px;
   }
 }
 </style>

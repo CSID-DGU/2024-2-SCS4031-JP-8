@@ -510,7 +510,6 @@ export default {
           }
         })
 
-        // Update bus markers on the map
         this.updateBusMarkers(busLocations)
       } catch (error) {
         console.error('[DEBUG] Error in FetchBusLocations:', error)
@@ -538,13 +537,12 @@ export default {
     },
     updateBusMarkers(busLocations) {
       console.log('[DEBUG] Updating bus markers on the map.')
-      // Remove existing bus markers
+
       if (this.busMarkers) {
         this.busMarkers.forEach((marker) => marker.setMap(null))
       }
       this.busMarkers = []
 
-      // Add new bus markers
       busLocations.forEach((bus) => {
         const marker = new naver.maps.Marker({
           position: new naver.maps.LatLng(bus.lat, bus.lng),
@@ -561,7 +559,7 @@ export default {
     },
     startRealTimeUpdates() {
       console.log('[DEBUG] Starting real-time updates.')
-      // Update bus locations every 30 seconds
+
       this.updateInterval = setInterval(() => {
         this.fetchBusLocations()
       }, 30000)
@@ -933,9 +931,9 @@ export default {
 }
 
 .refresh-button {
-  position: fixed; /* absolute에서 fixed로 변경 */
+  position: fixed;
   bottom: 24px;
-  right: calc(50% - 212.5px + 24px); /* 425px의 절반에서 오른쪽으로 24px 이동 */
+  right: calc(50% - 212.5px + 24px);
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -953,7 +951,7 @@ export default {
 
 @media (max-width: 425px) {
   .refresh-button {
-    right: 24px; /* 화면이 425px 이하일 때는 오른쪽에 고정 */
+    right: 24px;
   }
 }
 

@@ -581,7 +581,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 120px; /* 3개의 항목이 보이도록 높이 조정 */
+  height: 120px;
   scroll-behavior: smooth;
   position: relative;
   overflow-y: scroll;

@@ -174,7 +174,7 @@
 
 <br><br>
 
-| 실시간 추천 | 실시간 추천 | 경로 안내 | 세부 경로 안내 |
+| 실시간 추천 |  | 경로 안내 | 세부 경로 안내 |
 |-------|-------|-------|-------|
 | <img src="https://github.com/user-attachments/assets/bace7f7f-649f-4684-be87-0c0d4996e0a4" width="200"> | <img src="https://github.com/user-attachments/assets/0911b524-f4d2-4de7-b30d-135afff7ed79" width="200"> | <img src="https://github.com/user-attachments/assets/067accd8-3eb9-468d-9575-284e7255aee9" width="200"> | <img src="https://github.com/user-attachments/assets/72be911a-2786-44eb-997c-209e78c8a4ba" width="200"> |
 
@@ -194,7 +194,7 @@
 
 | 예측 추천 | 버스 노선 상세 안내 |  | 노선 없음 |
 |-------|-------|-------|-------|
-| <img src="https://github.com/user-attachments/assets/8de0f27c-d6c1-4da0-aebd-760a666b312d" width="200"> | <img src="https://github.com/user-attachments/assets/ea88e55b-c274-4ffd-98f5-c1d0e7f747d9" width="200"> | <img src="https://github.com/user-attachments/assets/00f1c427-c73c-4ebf-89df-4664a9771d05" width="200"> | <img src="https://github.com/user-attachments/assets/b4d81cb6-b097-464f-8c09-6620ab1a46a4" width="200"> |
+| <img src="https://github.com/user-attachments/assets/8de0f27c-d6c1-4da0-aebd-760a666b312d" width="200"> | <img src="https://github.com/user-attachments/assets/600a724d-b4b8-4761-b86e-72a6f14d3c82" width="200"> | <img src="https://github.com/user-attachments/assets/00f1c427-c73c-4ebf-89df-4664a9771d05" width="200"> | <img src="https://github.com/user-attachments/assets/b4d81cb6-b097-464f-8c09-6620ab1a46a4" width="200"> |
 > 5. **선택된 노선 정보 확인**
 * 지도 및 노선 상세 정보 제공
 * 노선의 현재 실시간 버스 위치 정보 및 새로고침 기능 제공

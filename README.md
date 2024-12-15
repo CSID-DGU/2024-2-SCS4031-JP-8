@@ -148,6 +148,15 @@
 
 <br>
 
+### 🎥 시연 영상
+
+[![YouTube](https://img.shields.io/badge/YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/zi8N4UBdILU?si=0_2XRTO9GjNxiqJp?feature=shared)
+
+
+
+
+<br>
+
 ### 🛠 기술 스택
 
 | **분야**    | **기술 스택**   |

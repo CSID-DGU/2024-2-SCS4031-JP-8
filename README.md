@@ -39,7 +39,7 @@
    npm install 
 5. **프로젝트 실행**: 실행 명령어로 프로젝트를 시작합니다.
    ```bash
-   npm run dev
+   npm run dev (윈도우 기준)
 
 <br>
 

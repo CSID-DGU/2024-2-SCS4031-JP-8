@@ -1,6 +1,6 @@
 const state = {
-  stationData: null, // 정류장 정보
-  finalResults: [] // 최종 계산 결과
+  stationData: null,
+  finalResults: []
 }
 
 const mutations = {

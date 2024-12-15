@@ -27,7 +27,7 @@
                 <a
                   href="#"
                   class="text-xs text-gray-600 transition-colors duration-200 hover:text-orange-500"
-                  >노선도</a
+                  >이메일</a
                 >
               </li>
 
@@ -35,24 +35,24 @@
                 <a
                   href="#"
                   class="text-xs text-gray-600 transition-colors duration-200 hover:text-orange-500"
-                  >공지사항</a
+                  >연락처</a
                 >
               </li>
               <li>
                 <a
                   href="#"
                   class="text-xs text-gray-600 transition-colors duration-200 hover:text-orange-500"
-                  >고객 지원</a
+                  >또타자</a
                 >
               </li>
             </ul>
           </div>
           <div>
-            <h3 class="mb-1 text-xs font-semibold text-gray-700">연락처</h3>
-            <p class="text-xs text-gray-600">고객센터: 1588-0000</p>
-            <p class="text-xs text-gray-600">이메일: support@busmiri.com</p>
+            <!-- <h3 class="mb-1 text-xs font-semibold text-gray-700">연락처</h3>
+            <p class="text-xs text-gray-600">이메일</p>
+            <p class="text-xs text-gray-600">개인정보 취급방침</p> -->
             <div class="flex mt-2 space-x-3">
-              <a
+              <!-- <a
                 href="#"
                 class="text-gray-400 transition-colors duration-200 hover:text-orange-500"
               >
@@ -69,7 +69,7 @@
                 class="text-gray-400 transition-colors duration-200 hover:text-orange-500"
               >
                 <InstagramIcon />
-              </a>
+              </a> -->
             </div>
           </div>
         </div>

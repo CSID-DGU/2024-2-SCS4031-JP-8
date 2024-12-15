@@ -6,6 +6,7 @@
   margin: 0 auto;
   font-family: 'Pretendard', sans-serif;
   background-color: #ffffff;
+  position: relative;
 }
 
 .app-header {
@@ -352,36 +353,6 @@
   margin-right: 16px;
 }
 
-.refresh-button {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
-  transition: all 0.3s ease;
-  margin-right: 740px;
-}
-
-.refresh-button:hover {
-  background-color: #2563eb;
-  transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.3);
-}
-
-.refresh-button:active {
-  transform: scale(0.95) translateY(1px);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-}
-
 .no-stations {
   text-align: center;
   padding: 20px;
@@ -409,10 +380,6 @@
     font-size: 0.8125rem;
   }
 
-  .refresh-button {
-    width: 48px;
-    height: 48px;
-  }
   /* .sort-button {
     padding: 8px 16px;
     font-size: 13px;
@@ -539,10 +506,6 @@
     font-size: 0.8125rem;
   }
 
-  .refresh-button {
-    width: 48px;
-    height: 48px;
-  }
   /* .sort-button {
     padding: 8px 16px;
     font-size: 13px;
@@ -975,4 +938,46 @@
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.refresh-button {
+  position: fixed; /* absolute에서 fixed로 변경 */
+  bottom: 24px;
+  right: calc(50% - 212.5px + 24px); /* 425px의 절반에서 오른쪽으로 24px 이동 */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+@media (max-width: 425px) {
+  .refresh-button {
+    right: 24px; /* 화면이 425px 이하일 때는 오른쪽에 고정 */
+  }
+}
+
+.refresh-button:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.refresh-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+.lucide-flag path,
+.lucide-flag line,
+.lucide-map-pin path,
+.lucide-map-pin line {
+  fill: none !important;
+  stroke: white !important; /* 외곽선만 하얗게 */
 }

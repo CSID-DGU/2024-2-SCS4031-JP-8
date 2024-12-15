@@ -24,10 +24,23 @@
       <div class="location-info">
         <div class="location from">
           <div class="location-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-map-pin"
+            >
               <path
-                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+                fill="none"
               />
+              <circle cx="12" cy="10" r="3" fill="none" />
             </svg>
           </div>
           <div>
@@ -37,10 +50,22 @@
         </div>
         <div class="location to">
           <div class="location-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-flag"
+            >
               <path
-                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
               />
+              <line x1="4" x2="4" y1="22" y2="15" />
             </svg>
           </div>
           <div>
@@ -358,7 +383,7 @@
           </div>
           <!-- 정류장이 없는 경우 -->
           <div v-if="sortedStations.length === 0" class="no-stations">
-            <h4>매우 붐비는 시간대입니다.</h4>
+            <h4>매우 붐비는 시간대이거나 현재 도착 예정 버스가 없습니다.</h4>
             <p
               v-if="
                 lowestProbabilityStation && lowestProbabilityStation.stationName
@@ -408,6 +433,7 @@ import { fetchBusRouteDetails } from './busApi'
 import { fetchBusArrivalInfo } from './busArrivalAPI'
 import { busRouteData } from './busData'
 import { calculateBoardingProbability } from './realpoisson'
+import { MapPin, Flag } from 'lucide-vue-next'
 
 export default {
   setup() {
@@ -886,13 +912,17 @@ export default {
               transidx: firstStation.idx,
               searchTime: searchTime.value // Vuex에서 가져온 minute 값을 매핑
             })
-          ).map((station) => ({
-            ...station,
-            probability: Math.floor(station.probability * 100) / 100 // 소숫점 둘째자리까지 자르기
-          }))
+          ).map((station) => {
+            // 확률 값이 1보다 크면 0.9로 설정하고, 소수점 첫째 자리까지만 남김
+            const adjustedProbability = Math.min(station.probability, 0.9)
+            return {
+              ...station,
+              probability: Math.floor(adjustedProbability * 10) / 10 // 첫째 자리까지 자르기
+            }
+          })
 
           console.log(
-            '[INFO] 계산된 탑승 확률 (소숫점 둘째자리까지):',
+            '[INFO] 계산된 탑승 확률 (소숫점 첫째자리까지):',
             selectedStations.value
           )
 

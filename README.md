@@ -74,8 +74,34 @@
 
 ### 🏗 설계 및 구현
 
-- ### 🧩 시스템 구조
-![최종발표_S8_J P-이미지-10](https://github.com/user-attachments/assets/7af6ea15-9d63-451b-8ff9-58d8f3f9ed29)
+- ### 🧩 시스템 구조  
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/7af6ea15-9d63-451b-8ff9-58d8f3f9ed29" width="900" alt="시스템 구조">
+</p>
+
+- ### 🧩 데이터 분석  
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/85795768-6229-41ac-81db-c58cdb353a7e" width="900" alt="데이터 분석 이미지 1">
+</p>
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/b572afe4-2300-49dc-a4ed-4eaac1744408" width="900" alt="데이터 분석 이미지 2">
+</p>
+
+<br>
+
+- ### 🧩 포아송 분포  
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/7a193154-20b0-471c-8cc4-23167be828a9" width="900" alt="포아송 분포 이미지 1">
+</p>
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/66e202fa-55ab-4c21-98f3-2401dab01ab0" width="900" alt="포아송 분포 이미지 2">
+</p>
+
+
+
+
+<br>
+
 - ### 📂 프로젝트 구조
 <details>
      

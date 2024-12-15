@@ -227,6 +227,12 @@
 
 <br>
 
+> 6. **퇴근 시간대 실시간 경로 캡처: 기존 시간대와 비교**
+<p align="left">
+  <img src="https://github.com/user-attachments/assets/b172f215-7e44-4afd-9450-5a670a0376b8" width="900" alt="포아송 분포 이미지 2">
+</p>
+
+
 
 ### 📊 기대효과
 

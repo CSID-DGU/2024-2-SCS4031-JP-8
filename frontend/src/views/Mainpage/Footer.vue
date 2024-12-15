@@ -98,9 +98,9 @@ const toggleExpand = () => {
 
 <style scoped>
 button {
-  background: transparent; /* 배경 투명 처리 */
-  border: none; /* 기본 보더 제거 */
-  outline: none; /* 포커스 outline 제거 */
+  background: transparent;
+  border: none;
+  outline: none;
   cursor: pointer;
 }
 button:focus {

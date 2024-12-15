@@ -1358,7 +1358,7 @@ onMounted(() => {
 }
 
 .additional-info-two .info-item {
-  flex: 1 1 calc(20% - 16px); /* 5개 항목을 균등하게 배치 */
+  flex: 1 1 calc(20% - 16px);
   min-width: 100px;
   background-color: #ffffff;
   padding: 12px;
@@ -1382,13 +1382,13 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .additional-info-two .info-item {
-    flex: 1 1 calc(33.333% - 16px); /* 태블릿에서는 3개씩 배치 */
+    flex: 1 1 calc(33.333% - 16px);
   }
 }
 
 @media (max-width: 480px) {
   .additional-info-two .info-item {
-    flex: 1 1 calc(50% - 16px); /* 모바일에서는 2개씩 배치 */
+    flex: 1 1 calc(50% - 16px);
   }
 }
 .time-info {

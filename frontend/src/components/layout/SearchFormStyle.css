@@ -32,7 +32,6 @@
   font-size: 14px;
 }
 
-/* 실시간 버튼 스타일 */
 .realtime-button {
   padding: 8px 10px;
   background-color: #e5c7c7;
@@ -49,7 +48,6 @@
   background-color: #d8b4b4;
 }
 
-/* 출발지와 도착지 바꾸기 버튼 스타일 */
 .switch-button-container {
   display: flex;
   justify-content: center;
@@ -166,12 +164,12 @@
   border: 1px solid #eee;
   border-radius: 10px;
   padding: 5px;
-  scrollbar-width: none; /* For Firefox */
-  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .scrollable::-webkit-scrollbar {
-  display: none; /* For Chrome, Safari, and Opera */
+  display: none;
 }
 
 .time-option {

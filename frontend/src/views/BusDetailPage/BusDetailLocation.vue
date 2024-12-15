@@ -933,9 +933,9 @@ export default {
 }
 
 .refresh-button {
-  position: fixed; /* absolute에서 fixed로 변경 */
+  position: fixed;
   bottom: 24px;
-  right: calc(50% - 212.5px + 24px); /* 425px의 절반에서 오른쪽으로 24px 이동 */
+  right: calc(50% - 212.5px + 24px);
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -953,7 +953,7 @@ export default {
 
 @media (max-width: 425px) {
   .refresh-button {
-    right: 24px; /* 화면이 425px 이하일 때는 오른쪽에 고정 */
+    right: 24px;
   }
 }
 

@@ -437,7 +437,7 @@ header h1 {
 .input-group input {
   width: 100%;
   padding: 14px 16px 14px 40px;
-  padding-right: 140px; /* 오른쪽 패딩 증가 */
+  padding-right: 140px; 
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   font-size: 16px;
@@ -474,7 +474,7 @@ header h1 {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap; /* 버튼 텍스트가 줄바꿈되지 않도록 설정 */
+  white-space: nowrap; 
 }
 
 .input-group button:hover {
@@ -483,7 +483,7 @@ header h1 {
 
 .clear-button {
   position: absolute;
-  right: 100px; /* 위치 조정 */
+  right: 100px; 
   top: 50%;
   transform: translateY(-50%);
   background: none;

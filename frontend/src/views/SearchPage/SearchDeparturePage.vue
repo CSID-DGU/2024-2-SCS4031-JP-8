@@ -17,7 +17,7 @@
         <button v-if="keyword" class="clear-button" @click="clearKeyword">
           <X />
         </button>
-        <button @click="searchPlaces">검색하기</button>
+        <button v-if="!keyword" @click="searchPlaces">검색하기</button>
       </div>
 
       <!-- '내 위치' 버튼 -->

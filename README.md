@@ -162,7 +162,7 @@
 
 | 메인페이지 | 출발지 검색 | 도착지 검색 | 시간 선택 |
 |-------|-------|-------|-------|
-| <img src="https://github.com/user-attachments/assets/fbaee89e-d1e7-4fad-93c7-c6d0c38d05ae" width="200"> | <img src="https://github.com/user-attachments/assets/06f22aea-b673-4642-b3b0-61c14ca35b80" width="200"> | <img src="https://github.com/user-attachments/assets/5725c97d-9a19-4393-85dd-626c62f0fcd6" width="200"> | <img src="https://github.com/user-attachments/assets/ba672e38-73bd-464a-92e3-aabf4fa1d13b" width="200"> |
+| <img src="https://github.com/user-attachments/assets/723b6bdf-95bb-4bb6-9ed2-fae27719cc18" width="200"> | <img src="https://github.com/user-attachments/assets/06f22aea-b673-4642-b3b0-61c14ca35b80" width="200"> | <img src="https://github.com/user-attachments/assets/5725c97d-9a19-4393-85dd-626c62f0fcd6" width="200"> | <img src="https://github.com/user-attachments/assets/9b52cb3e-4d4f-4de2-89e0-a8aa6ee7459f" width="200"> |
 
 
 > 1. **출발지-도착지 검색**

@@ -4,19 +4,20 @@
       <button class="back-button" @click="$router.go(-1)">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          fill="none"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
-          stroke-width="1.5"
+          fill="none"
           stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15.75 19.5L8.25 12l7.5-7.5"
-          />
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
-      <h1>버스 위치 정보</h1>
+      <h1>실시간 버스 상세 정보</h1>
     </div>
 
     <div class="content-wrapper">
@@ -216,20 +217,24 @@
       </div>
     </div>
 
-    <!-- New refresh button -->
     <button @click="refreshBusLocations" class="refresh-button">
       <svg
         xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
+        class="feather feather-refresh-cw"
       >
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
         <path
-          d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"
-        />
+          d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+        ></path>
       </svg>
     </button>
   </div>
@@ -598,6 +603,7 @@ export default {
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 .bus-location-page {
+  position: relative;
   width: 425px;
   max-width: 100%;
   margin: 0 auto;
@@ -927,36 +933,37 @@ export default {
 }
 
 .refresh-button {
-  position: fixed;
+  position: fixed; /* absolute에서 fixed로 변경 */
   bottom: 24px;
-  right: 24px;
-  width: 64px;
-  height: 64px;
+  right: calc(50% - 212.5px + 24px); /* 425px의 절반에서 오른쪽으로 24px 이동 */
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background-color: #3b82f6;
   color: white;
   border: none;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
   transition: all 0.3s ease;
   z-index: 1000;
-  margin-right: 740px;
+}
+
+@media (max-width: 425px) {
+  .refresh-button {
+    right: 24px; /* 화면이 425px 이하일 때는 오른쪽에 고정 */
+  }
 }
 
 .refresh-button:hover {
   background-color: #2563eb;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .refresh-button:active {
   transform: scale(0.95);
-}
-
-.refresh-button svg {
-  width: 32px;
-  height: 32px;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 </style>

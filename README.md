@@ -1,5 +1,7 @@
+<img src="https://capsule-render.vercel.app/api?type=waving&color=7aaff5&height=150&section=header&text=🚌잔여좌석을%20반영한%20최단시간%20길%20찾기:%20서울-경기%20광역버스&fontSize=30&fontColor=102f57" />
+
+
 # 2024-2-SCS4031-JP-8
-<!--![header](https://capsule-render.vercel.app/api?type=soft&color=auto&height=100&section=header&text=잔여좌석을%20반영한%20최단시간%20길%20찾기&fontSize=40)-->
 
 ### 🚀 프로젝트 이름
 
